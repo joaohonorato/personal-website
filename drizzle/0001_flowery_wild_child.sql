@@ -1,0 +1,1 @@
+ALTER TABLE "posts" ALTER COLUMN "reading_time_min" SET DATA TYPE integer;
