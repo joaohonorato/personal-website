@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ADMIN
           </span>
           <Link href="/admin" style={{ color: "#aaa", fontSize: "13px", textDecoration: "none" }}>Dashboard</Link>
+          <Link href="/admin/posts" style={{ color: "#aaa", fontSize: "13px", textDecoration: "none" }}>Posts</Link>
           <Link href="/admin/projects" style={{ color: "#aaa", fontSize: "13px", textDecoration: "none" }}>Projetos</Link>
           <Link href="/admin/sync" style={{ color: "#aaa", fontSize: "13px", textDecoration: "none" }}>Sync GitHub</Link>
         </div>
