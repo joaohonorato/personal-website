@@ -16,31 +16,20 @@ export default async function LoginPage({
         <form action={signIn} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              style={{ border: "2px solid #111", padding: "8px 10px", fontSize: "14px", outline: "none", fontFamily: "inherit" }}
-            />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>
               Senha
             </label>
             <input
               name="password"
               type="password"
               required
+              autoComplete="current-password"
               style={{ border: "2px solid #111", padding: "8px 10px", fontSize: "14px", outline: "none", fontFamily: "inherit" }}
             />
           </div>
 
           {error === "invalid_credentials" && (
             <p style={{ fontSize: "12px", color: "#c00", margin: 0 }}>
-              Email ou senha incorretos.
+              Senha incorreta.
             </p>
           )}
 

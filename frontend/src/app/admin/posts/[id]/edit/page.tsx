@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createServiceClient } from "@/utils/supabase/service";
+import { apiFetch } from "@/lib/api";
 import { updatePost } from "../../actions";
 import { PostForm } from "../../PostForm";
 
@@ -9,13 +9,11 @@ export default async function EditPostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = createServiceClient();
 
-  const { data: post } = await supabase
-    .from("posts")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const post = await apiFetch<{
+    id: number; title: string; slug: string; excerpt: string; content: string;
+    category: string; tags: string[]; readingTimeMin: number; published: boolean; generatedByAgent: boolean;
+  }>(`/api/posts/id/${id}`, {}, true).catch(() => null);
 
   if (!post) notFound();
 
@@ -35,9 +33,9 @@ export default async function EditPostPage({
           content: post.content,
           category: post.category,
           tags: post.tags ?? [],
-          readingTimeMin: post.reading_time_min,
+          readingTimeMin: post.readingTimeMin,
           published: post.published,
-          generatedByAgent: post.generated_by_agent,
+          generatedByAgent: post.generatedByAgent,
         }}
       />
     </div>

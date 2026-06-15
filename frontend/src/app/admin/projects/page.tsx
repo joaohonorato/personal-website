@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { createServiceClient } from "@/utils/supabase/service";
+import { apiFetch } from "@/lib/api";
 import { deleteProject } from "./actions";
 
-export default async function AdminProjectsPage() {
-  const supabase = createServiceClient();
+type Project = {
+  id: number;
+  name: string;
+  description: string;
+  repos: { id: number }[];
+  posts: { id: number }[];
+};
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*, project_repos(count), post_projects(count)")
-    .order("created_at", { ascending: false });
+export default async function AdminProjectsPage() {
+  const projects = await apiFetch<Project[]>("/api/projects", {}, true).catch(() => [] as Project[]);
 
   return (
     <div>
@@ -24,7 +27,7 @@ export default async function AdminProjectsPage() {
         </Link>
       </div>
 
-      {!projects?.length ? (
+      {!projects.length ? (
         <p style={{ color: "#888", fontSize: "14px" }}>Nenhum projeto ainda. Crie o primeiro.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#111" }}>
@@ -39,30 +42,19 @@ export default async function AdminProjectsPage() {
                 </div>
                 <div style={{ display: "flex", gap: "12px" }}>
                   <span style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {(project.project_repos as { count: number }[])[0]?.count ?? 0} repos
+                    {project.repos?.length ?? 0} repos
                   </span>
                   <span style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {(project.post_projects as { count: number }[])[0]?.count ?? 0} artigos
+                    {project.posts?.length ?? 0} artigos
                   </span>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
-                <Link
-                  href={`/admin/projects/${project.id}/edit`}
-                  style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}
-                >
+                <Link href={`/admin/projects/${project.id}/edit`} style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}>
                   Editar
                 </Link>
-                <form
-                  action={async () => {
-                    "use server";
-                    await deleteProject(project.id);
-                  }}
-                >
-                  <button
-                    type="submit"
-                    style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}
-                  >
+                <form action={async () => { "use server"; await deleteProject(project.id); }}>
+                  <button type="submit" style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}>
                     Excluir
                   </button>
                 </form>

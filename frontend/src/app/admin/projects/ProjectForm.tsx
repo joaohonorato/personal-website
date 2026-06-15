@@ -1,4 +1,4 @@
-type Repo = { id: number; name: string; full_name: string; is_private: boolean };
+type Repo = { id: number; name: string; fullName: string; isPrivate: boolean };
 type Post = { id: number; title: string; slug: string };
 
 type Props = {
@@ -65,8 +65,8 @@ export function ProjectForm({ action, repos, posts, defaultValues }: Props) {
                   value={repo.id}
                   defaultChecked={selectedRepos.has(repo.id)}
                 />
-                <span style={{ fontSize: "13px", flex: 1 }}>{repo.full_name}</span>
-                {repo.is_private && (
+                <span style={{ fontSize: "13px", flex: 1 }}>{repo.fullName}</span>
+                {repo.isPrivate && (
                   <span style={{ fontSize: "10px", color: "#888", border: "1px solid #ccc", padding: "1px 6px" }}>privado</span>
                 )}
               </label>

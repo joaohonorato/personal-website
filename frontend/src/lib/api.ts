@@ -1,18 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-
 const API_URL = process.env.API_URL ?? "http://localhost:8080";
-
-async function getJwt(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll() } }
-  );
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
-}
 
 export async function apiFetch<T>(
   path: string,
@@ -25,8 +11,7 @@ export async function apiFetch<T>(
   };
 
   if (withAuth) {
-    const token = await getJwt();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${process.env.ADMIN_SECRET}`;
   }
 
   const res = await fetch(`${API_URL}${path}`, {

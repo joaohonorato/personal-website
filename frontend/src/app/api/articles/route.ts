@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/utils/supabase/service";
+
+const API_URL = process.env.API_URL ?? "http://localhost:8080";
 
 export async function POST(request: NextRequest) {
   const secret = request.headers.get("x-revalidate-secret");
@@ -20,23 +21,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServiceClient();
-    const { data: post, error } = await supabase
-      .from("posts")
-      .insert({
-        title,
-        slug,
-        excerpt,
-        content,
-        category,
+    const wordCount = content.split(/\s+/).length;
+    const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
+
+    const res = await fetch(`${API_URL}/api/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_SECRET}`,
+      },
+      body: JSON.stringify({
+        title, slug, excerpt, content, category,
         tags: tags ?? [],
         published: true,
-        generated_by_agent: true,
-      })
-      .select()
-      .single();
+        generatedByAgent: true,
+        readingTimeMin,
+      }),
+    });
 
-    if (error) throw error;
+    if (!res.ok) throw new Error(`Spring Boot API error: ${res.status}`);
+
+    const post = await res.json();
 
     revalidatePath("/blog");
     revalidatePath(`/blog/${slug}`);

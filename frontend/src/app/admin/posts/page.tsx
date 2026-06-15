@@ -1,13 +1,19 @@
 import Link from "next/link";
-import { createServiceClient } from "@/utils/supabase/service";
+import { apiFetch } from "@/lib/api";
 import { deletePost } from "./actions";
 
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  category: string;
+  published: boolean;
+  readingTimeMin: number;
+  createdAt: string;
+};
+
 export default async function AdminPostsPage() {
-  const supabase = createServiceClient();
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("id, title, slug, category, published, created_at, reading_time_min")
-    .order("created_at", { ascending: false });
+  const posts = await apiFetch<Post[]>("/api/posts/all", {}, true).catch(() => [] as Post[]);
 
   return (
     <div>
@@ -23,7 +29,7 @@ export default async function AdminPostsPage() {
         </Link>
       </div>
 
-      {!posts?.length ? (
+      {!posts.length ? (
         <p style={{ color: "#888", fontSize: "14px" }}>Nenhum post ainda.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#111" }}>
@@ -36,52 +42,32 @@ export default async function AdminPostsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
                   <span
                     style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
+                      fontSize: "10px", fontWeight: 700, padding: "2px 8px",
                       background: post.published ? "#111" : "#eee",
                       color: post.published ? "#F5F0E8" : "#888",
-                      letterSpacing: "0.5px",
-                      textTransform: "uppercase",
+                      letterSpacing: "0.5px", textTransform: "uppercase",
                     }}
                   >
                     {post.published ? "publicado" : "rascunho"}
                   </span>
                   <span style={{ fontSize: "11px", color: "#888" }}>{post.category}</span>
-                  <span style={{ fontSize: "11px", color: "#bbb" }}>{post.reading_time_min} min</span>
+                  <span style={{ fontSize: "11px", color: "#bbb" }}>{post.readingTimeMin} min</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-story)", fontSize: "15px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {post.title}
                 </div>
-                <div style={{ fontSize: "11px", color: "#aaa", marginTop: "2px" }}>
-                  /blog/{post.slug}
-                </div>
+                <div style={{ fontSize: "11px", color: "#aaa", marginTop: "2px" }}>/blog/{post.slug}</div>
               </div>
 
               <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  target="_blank"
-                  style={{ border: "2px solid #ddd", padding: "6px 12px", fontSize: "12px", textDecoration: "none", color: "#888" }}
-                >
+                <Link href={`/blog/${post.slug}`} target="_blank" style={{ border: "2px solid #ddd", padding: "6px 12px", fontSize: "12px", textDecoration: "none", color: "#888" }}>
                   Ver ↗
                 </Link>
-                <Link
-                  href={`/admin/posts/${post.id}/edit`}
-                  style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}
-                >
+                <Link href={`/admin/posts/${post.id}/edit`} style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}>
                   Editar
                 </Link>
-                <form
-                  action={async () => {
-                    "use server";
-                    await deletePost(post.id);
-                  }}
-                >
-                  <button
-                    type="submit"
-                    style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}
-                  >
+                <form action={async () => { "use server"; await deletePost(post.id); }}>
+                  <button type="submit" style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}>
                     Excluir
                   </button>
                 </form>

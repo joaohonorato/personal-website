@@ -22,6 +22,13 @@ class ProjectController(
     @GetMapping
     fun listAll() = projectRepo.findAll()
 
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    fun getById(@PathVariable id: Int): ResponseEntity<Project> =
+        projectRepo.findById(id)
+            .map { ResponseEntity.ok(it) }
+            .orElse(ResponseEntity.notFound().build())
+
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     fun create(@Valid @RequestBody body: ProjectRequest): Project {

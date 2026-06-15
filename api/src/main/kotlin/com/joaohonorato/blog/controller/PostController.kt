@@ -21,6 +21,13 @@ class PostController(private val repo: PostRepository) {
     @PreAuthorize("isAuthenticated()")
     fun listAll() = repo.findAllByOrderByCreatedAtDesc()
 
+    @GetMapping("/id/{id}")
+    @PreAuthorize("isAuthenticated()")
+    fun getById(@PathVariable id: Int): ResponseEntity<Post> =
+        repo.findById(id)
+            .map { ResponseEntity.ok(it) }
+            .orElse(ResponseEntity.notFound().build())
+
     @GetMapping("/{slug}")
     fun getBySlug(@PathVariable slug: String): ResponseEntity<Post> =
         repo.findBySlug(slug)
