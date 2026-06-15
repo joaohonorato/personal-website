@@ -1,8 +1,11 @@
 package com.joaohonorato.blog.config
 
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -14,6 +17,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.stereotype.Component
@@ -26,7 +30,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @EnableWebSecurity
 @EnableMethodSecurity
 class SecurityConfig(
-    private val adminFilter: AdminTokenFilter,
+    private val jwtFilter: JwtAuthFilter,
     @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
 ) {
 
@@ -38,12 +42,16 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
                 it.requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{slug}", "/api/projects").permitAll()
+                it.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 it.anyRequest().authenticated()
             }
-            .addFilterBefore(adminFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
+
+    @Bean
+    fun passwordEncoder() = BCryptPasswordEncoder()
 
     @Bean
     fun corsSource(): CorsConfigurationSource {
@@ -59,9 +67,11 @@ class SecurityConfig(
 }
 
 @Component
-class AdminTokenFilter(
-    @Value("\${app.admin-secret}") private val adminSecret: String,
+class JwtAuthFilter(
+    @Value("\${app.jwt-secret}") private val jwtSecret: String,
 ) : OncePerRequestFilter() {
+
+    private val log = LoggerFactory.getLogger(JwtAuthFilter::class.java)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -71,12 +81,13 @@ class AdminTokenFilter(
         val header = request.getHeader("Authorization")
         if (header != null && header.startsWith("Bearer ")) {
             val token = header.removePrefix("Bearer ").trim()
-            if (token == adminSecret) {
-                val auth = UsernamePasswordAuthenticationToken(
-                    "admin", null, listOf(SimpleGrantedAuthority("ROLE_ADMIN"))
+            runCatching {
+                val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray(Charsets.UTF_8))
+                val claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).payload
+                SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(
+                    claims.subject, null, listOf(SimpleGrantedAuthority("ROLE_ADMIN"))
                 )
-                SecurityContextHolder.getContext().authentication = auth
-            }
+            }.onFailure { log.warn("JWT inválido: ${it.message}") }
         }
         chain.doFilter(request, response)
     }

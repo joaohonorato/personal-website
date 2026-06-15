@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 const API_URL = process.env.API_URL ?? "http://localhost:8080";
 
 export async function apiFetch<T>(
@@ -11,7 +13,9 @@ export async function apiFetch<T>(
   };
 
   if (withAuth) {
-    headers["Authorization"] = `Bearer ${process.env.ADMIN_SECRET}`;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+    if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(`${API_URL}${path}`, {

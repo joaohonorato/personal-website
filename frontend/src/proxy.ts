@@ -11,8 +11,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const session = request.cookies.get("admin_session");
-  if (!session?.value || session.value !== process.env.ADMIN_SECRET) {
+  const token = request.cookies.get("auth_token");
+  if (!token?.value) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
