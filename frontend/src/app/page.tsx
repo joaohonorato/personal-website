@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { getAllPosts } from "@/lib/posts";
-import { Post } from "@/db/schema";
+import { getAllPosts, Post } from "@/lib/posts";
 
-function formatDate(date: Date) {
+function formatDate(date: string | Date) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
