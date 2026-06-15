@@ -13,19 +13,20 @@ import org.springframework.stereotype.Component
 class UserSeedService(
     private val userRepo: UserRepository,
     private val passwordEncoder: BCryptPasswordEncoder,
-    @Value("\${app.admin.email:}") private val adminEmail: String,
-    @Value("\${app.admin.password:}") private val adminPassword: String,
+    @Value("\${app.admin.email:}") private val adminEmail: String?,
+    @Value("\${app.admin.password:}") private val adminPassword: String?,
 ) : ApplicationRunner {
 
     private val logger = LoggerFactory.getLogger(UserSeedService::class.java)
 
     override fun run(args: ApplicationArguments) {
         if (userRepo.count() > 0) return
-        if (adminEmail.isBlank() || adminPassword.isBlank()) {
+        if (adminEmail.isNullOrBlank() || adminPassword.isNullOrBlank()) {
             logger.warn("No users in DB — set ADMIN_EMAIL and ADMIN_PASSWORD env vars to create the first user")
             return
         }
-        userRepo.save(User(email = adminEmail, passwordHash = passwordEncoder.encode(adminPassword)))
+        val hash = passwordEncoder.encode(adminPassword!!)!!
+        userRepo.save(User(email = adminEmail!!, passwordHash = hash))
         logger.info("Created initial admin user: $adminEmail")
     }
 }
