@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { createServiceClient } from "@/utils/supabase/service";
+import { apiFetch } from "@/lib/api";
 
 type Repo = {
   id: number;
   name: string;
-  full_name: string;
+  fullName: string;
   url: string;
-  is_private: boolean;
+  isPrivate: boolean;
 };
 
 type Post = {
@@ -19,23 +19,12 @@ type Project = {
   id: number;
   name: string;
   description: string;
-  project_repos: { github_repos: Repo[] }[];
-  post_projects: { posts: Post[] }[];
+  repos: Repo[];
+  posts: Post[];
 };
 
 async function getProjects(): Promise<Project[]> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select(`
-      id, name, description,
-      project_repos ( github_repos ( id, name, full_name, url, is_private ) ),
-      post_projects ( posts ( id, title, slug ) )
-    `)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []) as Project[];
+  return apiFetch<Project[]>("/api/projects", { next: { revalidate: 60 } } as RequestInit).catch(() => []);
 }
 
 export default async function ProjectsPage() {
@@ -63,16 +52,11 @@ export default async function ProjectsPage() {
           <p style={{ color: "#888", fontSize: "14px" }}>Nenhum projeto publicado ainda.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#111" }}>
-            {projects.map((project) => {
-              const allRepos = project.project_repos.flatMap((r) => r.github_repos);
-              const posts = project.post_projects.flatMap((p) => p.posts);
-
-              return (
+            {projects.map((project) => (
                 <div
                   key={project.id}
                   style={{ background: "#fff", display: "grid", gridTemplateColumns: "1fr 260px", borderTop: "none" }}
                 >
-                  {/* Main content */}
                   <div style={{ padding: "24px 28px", borderRight: "3px solid #111" }}>
                     <h2 style={{ fontFamily: "var(--font-display)", fontSize: "22px", letterSpacing: "1px", marginBottom: "8px" }}>
                       {project.name}
@@ -81,13 +65,13 @@ export default async function ProjectsPage() {
                       {project.description}
                     </p>
 
-                    {allRepos.length > 0 && (
+                    {project.repos.length > 0 && (
                       <div>
                         <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
                           Repositórios
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          {allRepos.map((repo) => (
+                          {project.repos.map((repo: Repo) => (
                             <a
                               key={repo.id}
                               href={repo.url}
@@ -96,7 +80,7 @@ export default async function ProjectsPage() {
                               style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#111", textDecoration: "none", width: "fit-content" }}
                             >
                               <span style={{ fontFamily: "var(--font-story)" }}>{repo.name}</span>
-                              {repo.is_private && (
+                              {repo.isPrivate && (
                                 <span style={{ fontSize: "9px", color: "#888", border: "1px solid #ccc", padding: "1px 5px", lineHeight: "1.4" }}>privado</span>
                               )}
                               <span style={{ fontSize: "12px", color: "#888" }}>↗</span>
@@ -107,16 +91,15 @@ export default async function ProjectsPage() {
                     )}
                   </div>
 
-                  {/* Related posts sidebar */}
                   <div style={{ padding: "24px 20px", background: "#F5F0E8" }}>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: "12px", letterSpacing: "1.5px", borderBottom: "2px solid #111", paddingBottom: "6px", marginBottom: "12px", textTransform: "uppercase" }}>
                       Artigos
                     </div>
-                    {posts.length === 0 ? (
+                    {project.posts.length === 0 ? (
                       <p style={{ fontSize: "12px", color: "#aaa", margin: 0 }}>Nenhum artigo ainda.</p>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        {posts.map((post) => (
+                        {project.posts.map((post: Post) => (
                           <Link
                             key={post.id}
                             href={`/blog/${post.slug}`}
@@ -131,8 +114,7 @@ export default async function ProjectsPage() {
                     )}
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
         )}
       </div>

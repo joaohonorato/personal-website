@@ -1,26 +1,20 @@
-import { createServiceClient } from "@/utils/supabase/service";
+import { apiFetch } from "@/lib/api";
 import { syncGitHub } from "./actions";
 import { SyncButton } from "./SyncButton";
 
+type GithubRepo = { id: number; syncedAt: string };
+
 async function getStats() {
-  const supabase = createServiceClient();
-  const { count } = await supabase
-    .from("github_repos")
-    .select("*", { count: "exact", head: true });
-
-  const { data: latest } = await supabase
-    .from("github_repos")
-    .select("synced_at")
-    .order("synced_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  return { total: count ?? 0, lastSync: latest?.synced_at ?? null };
+  const repos = await apiFetch<GithubRepo[]>("/api/github/repos", {}, true).catch(() => []);
+  const lastSync = repos.length > 0
+    ? repos.sort((a, b) => b.syncedAt.localeCompare(a.syncedAt))[0].syncedAt
+    : null;
+  return { total: repos.length, lastSync };
 }
 
 async function syncAction(
-  prev: { synced: number; error?: string } | null,
-  formData: FormData
+  _prev: { synced: number; error?: string } | null,
+  _formData: FormData
 ) {
   "use server";
   return syncGitHub();
