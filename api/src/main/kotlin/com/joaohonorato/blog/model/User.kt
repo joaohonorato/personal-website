@@ -11,10 +11,14 @@ class User(
     val id: Int? = null,
 
     @Column(unique = true, nullable = false)
-    val email: String = "",
+    var email: String = "",
 
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String = "",
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'ADMIN'")
+    var role: UserRole = UserRole.READER,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now(),

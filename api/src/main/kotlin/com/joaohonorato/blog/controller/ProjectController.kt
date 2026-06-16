@@ -23,14 +23,14 @@ class ProjectController(
     fun listAll() = projectRepo.findAll()
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     fun getById(@PathVariable id: Int): ResponseEntity<Project> =
         projectRepo.findById(id)
             .map { ResponseEntity.ok(it) }
             .orElse(ResponseEntity.notFound().build())
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     fun create(@Valid @RequestBody body: ProjectRequest): Project {
         val project = Project(
             name = body.name,
@@ -42,7 +42,7 @@ class ProjectController(
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     fun update(@PathVariable id: Int, @Valid @RequestBody body: ProjectRequest): ResponseEntity<Project> {
         val project = projectRepo.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         project.name = body.name
@@ -54,7 +54,7 @@ class ProjectController(
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     fun delete(@PathVariable id: Int): ResponseEntity<Void> {
         if (!projectRepo.existsById(id)) return ResponseEntity.notFound().build()
         projectRepo.deleteById(id)

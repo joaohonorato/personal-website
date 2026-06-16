@@ -84,8 +84,9 @@ class JwtAuthFilter(
             runCatching {
                 val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray(Charsets.UTF_8))
                 val claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).payload
+                val role = claims["role"] as? String ?: "READER"
                 SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(
-                    claims.subject, null, listOf(SimpleGrantedAuthority("ROLE_ADMIN"))
+                    claims.subject, null, listOf(SimpleGrantedAuthority("ROLE_$role"))
                 )
             }.onFailure { log.warn("JWT inválido: ${it.message}") }
         }

@@ -16,6 +16,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
+  const role = request.cookies.get("user_role")?.value;
+
+  if (role === "READER") {
+    return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
+  const adminOnlyPaths = ["/admin/users", "/admin/projects"];
+  if (adminOnlyPaths.some((p) => pathname.startsWith(p)) && role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
   return NextResponse.next({ request });
 }
 

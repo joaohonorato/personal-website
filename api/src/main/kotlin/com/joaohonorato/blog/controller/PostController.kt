@@ -35,7 +35,7 @@ class PostController(private val repo: PostRepository) {
             .orElse(ResponseEntity.notFound().build())
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     fun create(@Valid @RequestBody body: PostRequest): Post {
         val post = Post(
             title = body.title,
@@ -52,7 +52,7 @@ class PostController(private val repo: PostRepository) {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     fun update(@PathVariable id: Int, @Valid @RequestBody body: PostRequest): ResponseEntity<Post> {
         val post = repo.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         post.title = body.title
@@ -69,7 +69,7 @@ class PostController(private val repo: PostRepository) {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     fun delete(@PathVariable id: Int): ResponseEntity<Void> {
         if (!repo.existsById(id)) return ResponseEntity.notFound().build()
         repo.deleteById(id)

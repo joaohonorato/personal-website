@@ -19,16 +19,17 @@ export async function signIn(formData: FormData) {
     redirect("/admin/login?error=invalid_credentials");
   }
 
-  const { token } = await res.json();
+  const { token, role } = await res.json();
 
   const cookieStore = await cookies();
-  cookieStore.set("auth_token", token, {
-    httpOnly: true,
+  const cookieOpts = {
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     maxAge: 30 * 24 * 60 * 60,
     path: "/",
-  });
+  };
+  cookieStore.set("auth_token", token, { ...cookieOpts, httpOnly: true });
+  cookieStore.set("user_role", role, { ...cookieOpts, httpOnly: false });
 
   redirect("/admin");
 }
@@ -36,5 +37,6 @@ export async function signIn(formData: FormData) {
 export async function signOut() {
   const cookieStore = await cookies();
   cookieStore.delete("auth_token");
+  cookieStore.delete("user_role");
   redirect("/admin/login");
 }

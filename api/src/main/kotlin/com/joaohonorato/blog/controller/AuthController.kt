@@ -33,12 +33,13 @@ class AuthController(
         val token = Jwts.builder()
             .subject(user.id.toString())
             .claim("email", user.email)
+            .claim("role", user.role.name)
             .issuedAt(Date())
             .expiration(Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000))
             .signWith(key)
             .compact()
 
-        return ResponseEntity.ok(mapOf("token" to token))
+        return ResponseEntity.ok(mapOf("token" to token, "role" to user.role.name))
     }
 }
 

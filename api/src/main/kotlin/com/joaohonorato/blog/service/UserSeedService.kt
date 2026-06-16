@@ -1,6 +1,7 @@
 package com.joaohonorato.blog.service
 
 import com.joaohonorato.blog.model.User
+import com.joaohonorato.blog.model.UserRole
 import com.joaohonorato.blog.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -26,7 +27,7 @@ class UserSeedService(
             return
         }
         val hash = passwordEncoder.encode(adminPassword!!)!!
-        userRepo.save(User(email = adminEmail!!, passwordHash = hash))
+        userRepo.save(User(email = adminEmail!!, passwordHash = hash, role = UserRole.ADMIN))
         logger.info("Created initial admin user: $adminEmail")
     }
 }
