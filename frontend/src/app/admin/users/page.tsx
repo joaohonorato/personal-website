@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { deleteUser, type User } from "./actions";
+import type { User } from "@/types";
+import { deleteUser } from "./actions";
 import { DeleteButton } from "@/app/admin/components/DeleteButton";
 
 const roleBadge: Record<string, React.CSSProperties> = {

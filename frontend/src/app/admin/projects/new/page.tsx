@@ -1,15 +1,12 @@
 import { apiFetch } from "@/lib/api";
+import type { GithubRepo, PostSummary } from "@/types";
 import { createProject } from "../actions";
 import { ProjectForm } from "../ProjectForm";
 
 export default async function NewProjectPage() {
   const [repos, posts] = await Promise.all([
-    apiFetch<{ id: number; name: string; fullName: string; isPrivate: boolean }[]>(
-      "/api/github/repos", {}, true
-    ).catch(() => []),
-    apiFetch<{ id: number; title: string; slug: string }[]>(
-      "/api/posts"
-    ).catch(() => []),
+    apiFetch<GithubRepo[]>("/api/github/repos", {}, true).catch(() => [] as GithubRepo[]),
+    apiFetch<PostSummary[]>("/api/posts").catch(() => [] as PostSummary[]),
   ]);
 
   return (

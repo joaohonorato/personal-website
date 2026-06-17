@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
-import { updateUser, type User } from "../../actions";
+import type { User } from "@/types";
+import { updateUser } from "../../actions";
 import UserForm from "../../UserForm";
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
