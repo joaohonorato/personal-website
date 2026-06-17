@@ -3,15 +3,9 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { User, UserRole } from "@/types";
 
-export type UserRole = "ADMIN" | "WRITER" | "READER";
-
-export type User = {
-  id: number;
-  email: string;
-  role: UserRole;
-  createdAt: string;
-};
+export type { User, UserRole };
 
 export async function createUser(formData: FormData) {
   await apiFetch(

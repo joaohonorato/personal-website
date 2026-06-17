@@ -7,5 +7,5 @@ import org.springframework.boot.test.context.SpringBootTest
 class BlogApiApplicationTests {
 
     @Test
-    fun contextLoads()
+    fun contextLoads() {}
 }

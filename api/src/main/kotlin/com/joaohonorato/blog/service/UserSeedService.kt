@@ -7,13 +7,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
 @Component
 class UserSeedService(
     private val userRepo: UserRepository,
-    private val passwordEncoder: BCryptPasswordEncoder,
+    private val passwordEncoder: PasswordEncoder,
     @Value("\${app.admin.email:}") private val adminEmail: String?,
     @Value("\${app.admin.password:}") private val adminPassword: String?,
 ) : ApplicationRunner {
@@ -22,12 +22,17 @@ class UserSeedService(
 
     override fun run(args: ApplicationArguments) {
         if (userRepo.count() > 0) return
-        if (adminEmail.isNullOrBlank() || adminPassword.isNullOrBlank()) {
-            logger.warn("No users in DB — set ADMIN_EMAIL and ADMIN_PASSWORD env vars to create the first user")
+
+        val email = adminEmail.takeUnless { it.isNullOrBlank() } ?: run {
+            logger.warn("No users in DB — set ADMIN_EMAIL and ADMIN_PASSWORD env vars to seed the first admin")
             return
         }
-        val hash = passwordEncoder.encode(adminPassword!!)!!
-        userRepo.save(User(email = adminEmail!!, passwordHash = hash, role = UserRole.ADMIN))
-        logger.info("Created initial admin user: $adminEmail")
+        val password = adminPassword.takeUnless { it.isNullOrBlank() } ?: run {
+            logger.warn("ADMIN_PASSWORD not set — skipping admin user creation")
+            return
+        }
+
+        userRepo.save(User(email = email, passwordHash = passwordEncoder.encode(password)!!, role = UserRole.ADMIN))
+        logger.info("Created initial admin user: $email")
     }
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function AboutPage() {
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <nav className="navbar">
@@ -11,13 +11,7 @@ export default function AboutPage() {
           <li><Link href="/about">Sobre</Link></li>
         </ul>
       </nav>
-      <div className="container">
-        <div className="section-header">
-          <span className="section-label">Sobre</span>
-          <div className="section-line" />
-        </div>
-        <p style={{ color: "#888", fontSize: "14px" }}>Em breve.</p>
-      </div>
+      {children}
     </>
   );
 }

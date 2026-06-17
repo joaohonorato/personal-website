@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Bangers, Special_Elite } from "next/font/google";
 import "./globals.css";
+
+const bangers = Bangers({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
+const specialElite = Special_Elite({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-story",
+});
 
 export const metadata: Metadata = {
   title: "personal-blog",
@@ -8,13 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bangers&family=Special+Elite&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="pt-BR" className={`${bangers.variable} ${specialElite.variable}`}>
       <body>{children}</body>
     </html>
   );

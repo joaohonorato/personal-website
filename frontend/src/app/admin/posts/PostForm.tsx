@@ -1,6 +1,8 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import { useRef, useState } from "react";
+import { SubmitButton } from "@/app/admin/components/SubmitButton";
 
 type DefaultValues = {
   title: string;
@@ -166,7 +168,7 @@ export function PostForm({ action, defaultValues }: Props) {
               lineHeight: "1.8",
               color: "#222",
             }}
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
           />
         ) : (
           <textarea
@@ -200,12 +202,7 @@ export function PostForm({ action, defaultValues }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: "10px" }}>
-        <button
-          type="submit"
-          style={{ background: "#111", color: "#F5F0E8", border: "none", padding: "10px 24px", fontSize: "13px", fontWeight: 700, letterSpacing: "1px", cursor: "pointer", textTransform: "uppercase" }}
-        >
-          Salvar
-        </button>
+        <SubmitButton label="Salvar" />
         <a
           href="/admin/posts"
           style={{ border: "2px solid #111", padding: "10px 24px", fontSize: "13px", fontWeight: 700, letterSpacing: "1px", textDecoration: "none", color: "#111", textTransform: "uppercase" }}

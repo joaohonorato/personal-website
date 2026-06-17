@@ -1,19 +1,7 @@
-import { apiFetch } from "./api";
+import { apiFetch } from "@/lib/api";
+import type { Post } from "@/types";
 
-export type Post = {
-  id: number;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  tags: string[];
-  published: boolean;
-  generatedByAgent: boolean;
-  readingTimeMin: number;
-  createdAt: string;
-  updatedAt: string;
-};
+export type { Post };
 
 export async function getAllPosts(): Promise<Post[]> {
   return apiFetch<Post[]>("/api/posts", { next: { revalidate: 60 } } as RequestInit);

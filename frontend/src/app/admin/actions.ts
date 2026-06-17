@@ -2,8 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-const API_URL = process.env.API_URL ?? "http://localhost:8080";
+import { API_URL } from "@/lib/config";
 
 export async function signIn(formData: FormData) {
   const email = formData.get("email") as string;

@@ -1,10 +1,10 @@
-type Repo = { id: number; name: string; fullName: string; isPrivate: boolean };
-type Post = { id: number; title: string; slug: string };
+import type { GithubRepo, PostSummary } from "@/types";
+import { SubmitButton } from "@/app/admin/components/SubmitButton";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
-  repos: Repo[];
-  posts: Post[];
+  repos: GithubRepo[];
+  posts: PostSummary[];
   defaultValues?: {
     name: string;
     description: string;
@@ -102,12 +102,7 @@ export function ProjectForm({ action, repos, posts, defaultValues }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: "10px" }}>
-        <button
-          type="submit"
-          style={{ background: "#111", color: "#F5F0E8", border: "none", padding: "10px 24px", fontSize: "13px", fontWeight: 700, letterSpacing: "1px", cursor: "pointer", textTransform: "uppercase" }}
-        >
-          Salvar
-        </button>
+        <SubmitButton label="Salvar" />
         <a
           href="/admin/projects"
           style={{ border: "2px solid #111", padding: "10px 24px", fontSize: "13px", fontWeight: 700, letterSpacing: "1px", textDecoration: "none", color: "#111", textTransform: "uppercase" }}

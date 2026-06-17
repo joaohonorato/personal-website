@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { deleteUser, type User } from "./actions";
+import { DeleteButton } from "@/app/admin/components/DeleteButton";
 
 const roleBadge: Record<string, React.CSSProperties> = {
   ADMIN: { background: "#111", color: "#F5F0E8" },
@@ -64,14 +65,10 @@ export default async function AdminUsersPage() {
                 >
                   Editar
                 </Link>
-                <form action={async () => { "use server"; await deleteUser(user.id); }}>
-                  <button
-                    type="submit"
-                    style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}
-                  >
-                    Excluir
-                  </button>
-                </form>
+                <DeleteButton
+                  action={async () => { "use server"; await deleteUser(user.id); }}
+                  confirmMessage={`Excluir o usuário "${user.email}"?`}
+                />
               </div>
             </div>
           ))}

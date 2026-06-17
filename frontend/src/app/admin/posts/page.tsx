@@ -1,19 +1,18 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import type { Post } from "@/types";
 import { deletePost } from "./actions";
-
-type Post = {
-  id: number;
-  title: string;
-  slug: string;
-  category: string;
-  published: boolean;
-  readingTimeMin: number;
-  createdAt: string;
-};
+import { DeleteButton } from "@/app/admin/components/DeleteButton";
 
 export default async function AdminPostsPage() {
-  const posts = await apiFetch<Post[]>("/api/posts/all", {}, true).catch(() => [] as Post[]);
+  let posts: Post[] = [];
+  let fetchError = false;
+
+  try {
+    posts = await apiFetch<Post[]>("/api/posts/all", {}, true);
+  } catch {
+    fetchError = true;
+  }
 
   return (
     <div>
@@ -29,7 +28,9 @@ export default async function AdminPostsPage() {
         </Link>
       </div>
 
-      {!posts.length ? (
+      {fetchError ? (
+        <p style={{ color: "#c00", fontSize: "14px" }}>Erro ao carregar posts. Verifique se a API está acessível.</p>
+      ) : !posts.length ? (
         <p style={{ color: "#888", fontSize: "14px" }}>Nenhum post ainda.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#111" }}>
@@ -66,11 +67,10 @@ export default async function AdminPostsPage() {
                 <Link href={`/admin/posts/${post.id}/edit`} style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}>
                   Editar
                 </Link>
-                <form action={async () => { "use server"; await deletePost(post.id); }}>
-                  <button type="submit" style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}>
-                    Excluir
-                  </button>
-                </form>
+                <DeleteButton
+                  action={async () => { "use server"; await deletePost(post.id); }}
+                  confirmMessage={`Excluir o post "${post.title}"?`}
+                />
               </div>
             </div>
           ))}

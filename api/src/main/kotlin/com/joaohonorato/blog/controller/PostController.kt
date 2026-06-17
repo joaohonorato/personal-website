@@ -1,83 +1,52 @@
 package com.joaohonorato.blog.controller
 
-import com.joaohonorato.blog.model.Post
-import com.joaohonorato.blog.repository.PostRepository
+import com.joaohonorato.blog.dto.PostResponse
+import com.joaohonorato.blog.service.PostRequest
+import com.joaohonorato.blog.service.PostService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
-import java.time.Instant
 
 @RestController
 @RequestMapping("/api/posts")
-class PostController(private val repo: PostRepository) {
+class PostController(private val postService: PostService) {
 
     @GetMapping
-    fun listPublished() = repo.findAllByPublishedTrueOrderByCreatedAtDesc()
+    fun listPublished(): List<PostResponse> = postService.listPublished()
 
     @GetMapping("/all")
     @PreAuthorize("isAuthenticated()")
-    fun listAll() = repo.findAllByOrderByCreatedAtDesc()
+    fun listAll(): List<PostResponse> = postService.listAll()
 
     @GetMapping("/id/{id}")
     @PreAuthorize("isAuthenticated()")
-    fun getById(@PathVariable id: Int): ResponseEntity<Post> =
-        repo.findById(id)
-            .map { ResponseEntity.ok(it) }
-            .orElse(ResponseEntity.notFound().build())
+    fun getById(@PathVariable id: Int): PostResponse = postService.getById(id)
 
     @GetMapping("/{slug}")
-    fun getBySlug(@PathVariable slug: String): ResponseEntity<Post> =
-        repo.findBySlug(slug)
-            .map { ResponseEntity.ok(it) }
-            .orElse(ResponseEntity.notFound().build())
+    fun getBySlug(@PathVariable slug: String): PostResponse = postService.getBySlug(slug)
 
     @PostMapping
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
-    fun create(@Valid @RequestBody body: PostRequest): Post {
-        val post = Post(
-            title = body.title,
-            slug = body.slug,
-            excerpt = body.excerpt,
-            content = body.content,
-            category = body.category,
-            readingTimeMin = body.readingTimeMin,
-            published = body.published,
-            generatedByAgent = body.generatedByAgent,
-            tags = body.tags.toTypedArray(),
-        )
-        return repo.save(post)
-    }
+    fun create(@Valid @RequestBody body: PostRequestDto): PostResponse =
+        postService.create(body.toServiceRequest())
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
-    fun update(@PathVariable id: Int, @Valid @RequestBody body: PostRequest): ResponseEntity<Post> {
-        val post = repo.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-        post.title = body.title
-        post.slug = body.slug
-        post.excerpt = body.excerpt
-        post.content = body.content
-        post.category = body.category
-        post.readingTimeMin = body.readingTimeMin
-        post.published = body.published
-        post.generatedByAgent = body.generatedByAgent
-        post.tags = body.tags.toTypedArray()
-        post.updatedAt = Instant.now()
-        return ResponseEntity.ok(repo.save(post))
-    }
+    fun update(@PathVariable id: Int, @Valid @RequestBody body: PostRequestDto): PostResponse =
+        postService.update(id, body.toServiceRequest())
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     fun delete(@PathVariable id: Int): ResponseEntity<Void> {
-        if (!repo.existsById(id)) return ResponseEntity.notFound().build()
-        repo.deleteById(id)
+        postService.delete(id)
         return ResponseEntity.noContent().build()
     }
 }
 
-data class PostRequest(
+data class PostRequestDto(
     @field:NotBlank val title: String,
     @field:NotBlank val slug: String,
     val excerpt: String = "",
@@ -87,4 +56,16 @@ data class PostRequest(
     val published: Boolean = true,
     val generatedByAgent: Boolean = false,
     val tags: List<String> = emptyList(),
+)
+
+private fun PostRequestDto.toServiceRequest() = PostRequest(
+    title = title,
+    slug = slug,
+    excerpt = excerpt,
+    content = content,
+    category = category,
+    readingTimeMin = readingTimeMin,
+    published = published,
+    generatedByAgent = generatedByAgent,
+    tags = tags,
 )

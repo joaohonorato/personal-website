@@ -13,7 +13,7 @@ class GithubRepo(
     val id: Int? = null,
 
     @Column(name = "github_id", unique = true, nullable = false)
-    val githubId: Int = 0,
+    val githubId: Long = 0L,
 
     @Column(nullable = false)
     val name: String = "",

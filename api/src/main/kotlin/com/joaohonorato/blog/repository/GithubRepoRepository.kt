@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 
 interface GithubRepoRepository : JpaRepository<GithubRepo, Int> {
-    fun findByGithubId(githubId: Int): Optional<GithubRepo>
+    fun findByGithubId(githubId: Long): Optional<GithubRepo>
 }

@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import type { Project } from "@/types";
 import { deleteProject } from "./actions";
-
-type Project = {
-  id: number;
-  name: string;
-  description: string;
-  repos: { id: number }[];
-  posts: { id: number }[];
-};
+import { DeleteButton } from "@/app/admin/components/DeleteButton";
 
 export default async function AdminProjectsPage() {
   const projects = await apiFetch<Project[]>("/api/projects", {}, true).catch(() => [] as Project[]);
@@ -53,11 +47,10 @@ export default async function AdminProjectsPage() {
                 <Link href={`/admin/projects/${project.id}/edit`} style={{ border: "2px solid #111", padding: "6px 14px", fontSize: "12px", fontWeight: 600, textDecoration: "none", color: "#111" }}>
                   Editar
                 </Link>
-                <form action={async () => { "use server"; await deleteProject(project.id); }}>
-                  <button type="submit" style={{ border: "2px solid #c00", padding: "6px 14px", fontSize: "12px", fontWeight: 600, background: "none", color: "#c00", cursor: "pointer" }}>
-                    Excluir
-                  </button>
-                </form>
+                <DeleteButton
+                  action={async () => { "use server"; await deleteProject(project.id); }}
+                  confirmMessage={`Excluir o projeto "${project.name}"?`}
+                />
               </div>
             </div>
           ))}

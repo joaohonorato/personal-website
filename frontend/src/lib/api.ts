@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-
-const API_URL = process.env.API_URL ?? "http://localhost:8080";
+import { API_URL } from "@/lib/config";
 
 export async function apiFetch<T>(
   path: string,

@@ -1,6 +1,7 @@
 "use client";
 
-import type { UserRole } from "./actions";
+import type { UserRole } from "@/types";
+import { SubmitButton } from "@/app/admin/components/SubmitButton";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
@@ -64,16 +65,7 @@ export default function UserForm({ action, defaultValues, isEdit }: Props) {
         </select>
       </div>
 
-      <button
-        type="submit"
-        style={{
-          background: "#111", color: "#F5F0E8", border: "none",
-          padding: "12px", fontSize: "13px", fontWeight: 600,
-          letterSpacing: "1px", cursor: "pointer", textTransform: "uppercase",
-        }}
-      >
-        {isEdit ? "Salvar alterações" : "Criar usuário"}
-      </button>
+      <SubmitButton label={isEdit ? "Salvar alterações" : "Criar usuário"} />
     </form>
   );
 }

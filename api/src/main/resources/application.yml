@@ -19,6 +19,7 @@ server:
 
 app:
   jwt-secret: ${JWT_SECRET}
+  jwt-expiration-days: 30
   admin:
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}
