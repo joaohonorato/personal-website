@@ -4,7 +4,7 @@ import type { Post } from "@/types";
 export type { Post };
 
 export async function getAllPosts(): Promise<Post[]> {
-  return apiFetch<Post[]>("/api/posts", { next: { revalidate: 60 } } as RequestInit);
+  return apiFetch<Post[]>("/api/posts", { next: { revalidate: 60 } } as RequestInit).catch(() => []);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {

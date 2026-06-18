@@ -2,8 +2,10 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import type { Project, RepoSummary, PostSummary } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 async function getProjects(): Promise<Project[]> {
-  return apiFetch<Project[]>("/api/projects", { next: { revalidate: 60 } } as RequestInit).catch(() => []);
+  return apiFetch<Project[]>("/api/projects").catch(() => []);
 }
 
 export default async function ProjectsPage() {

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getAllPosts, type Post } from "@/lib/posts";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(date: string | Date) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
