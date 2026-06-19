@@ -18,10 +18,7 @@ export async function signIn(formData: FormData) {
     redirect("/admin/login?error=invalid_credentials");
   }
 
-  const data = await res.json();
-  const token: string = data.token;
-  // Suporte ao formato antigo (role: string) enquanto o backend não for redeploy
-  const roles: string[] = Array.isArray(data.roles) ? data.roles : [data.role].filter(Boolean);
+  const { token, roles } = await res.json() as { token: string; roles: string[] };
 
   const cookieStore = await cookies();
   const cookieOpts = {
