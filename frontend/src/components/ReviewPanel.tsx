@@ -182,7 +182,7 @@ export function ReviewPanel({ postId }: { postId: number }) {
               </p>
               <button
                 type="button"
-                onClick={handleReview}
+                onClick={() => handleReview()}
                 style={{ border: "2px solid #111", background: "#fff", padding: "10px 20px", fontSize: "12px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", cursor: "pointer", fontFamily: "inherit" }}
               >
                 🔍 Iniciar revisão
