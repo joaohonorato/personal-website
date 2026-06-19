@@ -28,7 +28,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from tavily import TavilyClient
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -78,15 +77,21 @@ def _resolve_blog_token() -> str:
     return token
 
 
-BLOG_ADMIN_TOKEN = _resolve_blog_token()
-
-# ---------------------------------------------------------------------------
-# Import agent functions (patch globals first)
-# ---------------------------------------------------------------------------
+# Token resolved lazily in background so uvicorn starts (and /health responds) immediately
+BLOG_ADMIN_TOKEN = ""
 
 sys.path.insert(0, str(Path(__file__).parent))
 import article_agent as _agent
-_agent.BLOG_ADMIN_TOKEN = BLOG_ADMIN_TOKEN
+
+
+def _init_blog_token() -> None:
+    global BLOG_ADMIN_TOKEN
+    token = _resolve_blog_token()
+    BLOG_ADMIN_TOKEN = token
+    _agent.BLOG_ADMIN_TOKEN = token
+
+
+threading.Thread(target=_init_blog_token, daemon=True).start()
 
 from article_agent import (
     SYSTEM_PROMPT, TOOLS,
