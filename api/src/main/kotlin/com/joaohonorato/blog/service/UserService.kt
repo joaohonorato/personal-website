@@ -31,7 +31,7 @@ class UserService(
         val user = User(
             email = request.email,
             passwordHash = passwordEncoder.encode(request.password)!!,
-            role = request.role,
+            roles = request.roles.toMutableSet(),
         )
         return userRepo.save(user).toResponse()
     }
@@ -45,10 +45,10 @@ class UserService(
             user.email = newEmail
         }
         request.password?.let { user.passwordHash = passwordEncoder.encode(it)!! }
-        request.role?.let {
+        request.roles?.let {
             if (user.id.toString() == currentUserId)
-                throw BadRequestException("Cannot change your own role")
-            user.role = it
+                throw BadRequestException("Cannot change your own roles")
+            user.roles = it.toMutableSet()
         }
         return userRepo.save(user).toResponse()
     }
@@ -64,25 +64,25 @@ class UserService(
 data class UserResponse(
     val id: Int,
     val email: String,
-    val role: UserRole,
+    val roles: Set<UserRole>,
     val createdAt: Instant,
 )
 
 data class CreateUserRequest(
     val email: String,
     val password: String,
-    val role: UserRole = UserRole.READER,
+    val roles: Set<UserRole> = setOf(UserRole.READER),
 )
 
 data class UpdateUserRequest(
     val email: String? = null,
     val password: String? = null,
-    val role: UserRole? = null,
+    val roles: Set<UserRole>? = null,
 )
 
 private fun User.toResponse() = UserResponse(
     id = id!!,
     email = email,
-    role = role,
+    roles = roles,
     createdAt = createdAt,
 )

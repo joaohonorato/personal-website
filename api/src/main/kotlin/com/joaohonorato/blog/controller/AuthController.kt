@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*
 class AuthController(private val authService: AuthService) {
 
     @PostMapping("/login")
-    fun login(@Valid @RequestBody body: LoginRequest): ResponseEntity<Map<String, String>> {
-        val (token, role) = authService.login(body.email, body.password)
-        return ResponseEntity.ok(mapOf("token" to token, "role" to role))
+    fun login(@Valid @RequestBody body: LoginRequest): ResponseEntity<Map<String, Any>> {
+        val (token, roles) = authService.login(body.email, body.password)
+        return ResponseEntity.ok(mapOf("token" to token, "roles" to roles))
     }
 }
 

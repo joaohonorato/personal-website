@@ -1,9 +1,9 @@
-export type UserRole = "ADMIN" | "WRITER" | "READER";
+export type UserRole = "ADMIN" | "WRITER" | "READER" | "AI_USER";
 
 export type User = {
   id: number;
   email: string;
-  role: UserRole;
+  roles: UserRole[];
   createdAt: string;
 };
 

@@ -5,9 +5,10 @@ import { deleteUser } from "./actions";
 import { DeleteButton } from "@/app/admin/components/DeleteButton";
 
 const roleBadge: Record<string, React.CSSProperties> = {
-  ADMIN: { background: "#111", color: "#F5F0E8" },
-  WRITER: { background: "#2563eb", color: "#fff" },
-  READER: { background: "#eee", color: "#666" },
+  ADMIN:   { background: "#111", color: "#F5F0E8" },
+  WRITER:  { background: "#2563eb", color: "#fff" },
+  READER:  { background: "#eee", color: "#666" },
+  AI_USER: { background: "#FFD700", color: "#111" },
 };
 
 export default async function AdminUsersPage() {
@@ -46,10 +47,12 @@ export default async function AdminUsersPage() {
               style={{ background: "#fff", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}
             >
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", letterSpacing: "0.5px", textTransform: "uppercase", ...roleBadge[user.role] }}>
-                    {user.role}
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", flexWrap: "wrap" }}>
+                  {user.roles.map((r) => (
+                    <span key={r} style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", letterSpacing: "0.5px", textTransform: "uppercase", ...(roleBadge[r] ?? { background: "#eee", color: "#666" }) }}>
+                      {r}
+                    </span>
+                  ))}
                 </div>
                 <div style={{ fontFamily: "var(--font-story)", fontSize: "15px", fontWeight: 600 }}>
                   {user.email}

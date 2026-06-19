@@ -18,7 +18,10 @@ export async function signIn(formData: FormData) {
     redirect("/admin/login?error=invalid_credentials");
   }
 
-  const { token, role } = await res.json();
+  const data = await res.json();
+  const token: string = data.token;
+  // Suporte ao formato antigo (role: string) enquanto o backend não for redeploy
+  const roles: string[] = Array.isArray(data.roles) ? data.roles : [data.role].filter(Boolean);
 
   const cookieStore = await cookies();
   const cookieOpts = {
@@ -28,7 +31,7 @@ export async function signIn(formData: FormData) {
     path: "/",
   };
   cookieStore.set("auth_token", token, { ...cookieOpts, httpOnly: true });
-  cookieStore.set("user_role", role, { ...cookieOpts, httpOnly: false });
+  cookieStore.set("user_roles", roles.join(","), { ...cookieOpts, httpOnly: false });
 
   redirect("/admin");
 }
@@ -36,6 +39,6 @@ export async function signIn(formData: FormData) {
 export async function signOut() {
   const cookieStore = await cookies();
   cookieStore.delete("auth_token");
-  cookieStore.delete("user_role");
+  cookieStore.delete("user_roles");
   redirect("/admin/login");
 }

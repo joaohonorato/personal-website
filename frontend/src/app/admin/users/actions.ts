@@ -12,7 +12,7 @@ export async function createUser(formData: FormData) {
       body: JSON.stringify({
         email: formData.get("email"),
         password: formData.get("password"),
-        role: formData.get("role"),
+        roles: formData.getAll("roles"),
       }),
     },
     true
@@ -22,9 +22,9 @@ export async function createUser(formData: FormData) {
 }
 
 export async function updateUser(id: number, formData: FormData) {
-  const body: Record<string, string> = {
+  const body: Record<string, unknown> = {
     email: formData.get("email") as string,
-    role: formData.get("role") as string,
+    roles: formData.getAll("roles"),
   };
   const password = formData.get("password") as string;
   if (password) body.password = password;

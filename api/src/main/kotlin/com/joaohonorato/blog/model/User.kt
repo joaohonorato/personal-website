@@ -16,9 +16,11 @@ class User(
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String = "",
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = [JoinColumn(name = "user_id")])
+    @Column(name = "role")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'ADMIN'")
-    var role: UserRole = UserRole.READER,
+    var roles: MutableSet<UserRole> = mutableSetOf(UserRole.READER),
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now(),

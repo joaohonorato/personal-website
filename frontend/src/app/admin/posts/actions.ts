@@ -72,3 +72,32 @@ export async function deletePost(id: number) {
   revalidatePath("/blog");
   revalidatePath("/");
 }
+
+export async function applyReviewChanges(
+  postId: number,
+  post: {
+    title: string; slug: string; excerpt: string; content: string;
+    category: string; tags: string[]; readingTimeMin: number;
+    published: boolean; generatedByAgent: boolean;
+  },
+  newContent: string,
+) {
+  await apiFetch(`/api/posts/${postId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt ?? "",
+      content: newContent,
+      category: post.category ?? "",
+      tags: post.tags ?? [],
+      readingTimeMin: post.readingTimeMin ?? 1,
+      published: post.published,
+      generatedByAgent: post.generatedByAgent,
+    }),
+  }, true);
+
+  revalidatePath(`/admin/posts/${postId}/edit`);
+  revalidatePath(`/blog/${post.slug}`);
+  revalidatePath("/blog");
+}

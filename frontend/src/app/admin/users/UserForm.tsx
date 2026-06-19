@@ -5,9 +5,16 @@ import { SubmitButton } from "@/app/admin/components/SubmitButton";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
-  defaultValues?: { email?: string; role?: UserRole };
+  defaultValues?: { email?: string; roles?: UserRole[] };
   isEdit?: boolean;
 };
+
+const ROLES: { value: UserRole; label: string; description: string }[] = [
+  { value: "ADMIN",   label: "Admin",    description: "Gerencia tudo" },
+  { value: "WRITER",  label: "Writer",   description: "Gerencia posts" },
+  { value: "READER",  label: "Reader",   description: "Somente leitura" },
+  { value: "AI_USER", label: "AI User",  description: "Usa o agente de IA" },
+];
 
 const inputStyle: React.CSSProperties = {
   border: "2px solid #111",
@@ -29,6 +36,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function UserForm({ action, defaultValues, isEdit }: Props) {
+  const defaultRoles = defaultValues?.roles ?? ["READER"];
+
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "480px" }}>
       <div>
@@ -53,16 +62,33 @@ export default function UserForm({ action, defaultValues, isEdit }: Props) {
       </div>
 
       <div>
-        <label style={labelStyle}>Role</label>
-        <select
-          name="role"
-          defaultValue={defaultValues?.role ?? "READER"}
-          style={{ ...inputStyle, background: "#fff", cursor: "pointer" }}
-        >
-          <option value="ADMIN">Admin — gerencia tudo</option>
-          <option value="WRITER">Writer — gerencia posts</option>
-          <option value="READER">Reader — somente leitura</option>
-        </select>
+        <label style={labelStyle}>Roles</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {ROLES.map((r) => (
+            <label
+              key={r.value}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                border: "2px solid #ddd",
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              <input
+                type="checkbox"
+                name="roles"
+                value={r.value}
+                defaultChecked={defaultRoles.includes(r.value)}
+                style={{ width: "16px", height: "16px", cursor: "pointer" }}
+              />
+              <span style={{ fontWeight: 700, minWidth: "80px" }}>{r.label}</span>
+              <span style={{ fontSize: "12px", color: "#888" }}>{r.description}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <SubmitButton label={isEdit ? "Salvar alterações" : "Criar usuário"} />

@@ -4,8 +4,8 @@ import { signOut } from "@/app/admin/actions";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
-  const isAdmin = role === "ADMIN";
+  const userRoles = (cookieStore.get("user_roles")?.value ?? "").split(",").filter(Boolean);
+  const isAdmin = userRoles.includes("ADMIN");
 
   return (
     <div style={{ minHeight: "100vh", background: "#F5F0E8" }}>
@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "11px", color: "#666", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-            {role}
+            {userRoles.join(", ")}
           </span>
           <form action={signOut}>
             <button type="submit" style={{ background: "none", border: "1px solid #444", color: "#aaa", padding: "4px 12px", fontSize: "12px", cursor: "pointer" }}>

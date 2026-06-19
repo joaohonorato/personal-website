@@ -162,3 +162,7 @@ body {
 .md-body img { max-width: 100%; border: 2px solid #111; margin: 16px 0; }
 .md-body hr { border: none; border-top: 2px solid #111; margin: 32px 0; }
 .main { display: flex; flex-direction: column; gap: 3px; }
+
+/* Dashboard cards */
+.dash-card { transition: box-shadow 0.15s; }
+.dash-card:hover { box-shadow: 4px 4px 0 #111; }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { updatePost } from "../../actions";
 import { PostForm } from "../../PostForm";
+import { ReviewPanel } from "@/components/ReviewPanel";
 
 export default async function EditPostPage({
   params,
@@ -24,6 +25,7 @@ export default async function EditPostPage({
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: "28px", letterSpacing: "1px", marginBottom: "28px" }}>
         Editar — {post.title}
       </h1>
+      <ReviewPanel postId={Number(id)} />
       <PostForm
         action={action}
         defaultValues={{

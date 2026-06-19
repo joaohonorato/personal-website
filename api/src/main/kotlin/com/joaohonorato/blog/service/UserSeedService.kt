@@ -32,7 +32,7 @@ class UserSeedService(
             return
         }
 
-        userRepo.save(User(email = email, passwordHash = passwordEncoder.encode(password)!!, role = UserRole.ADMIN))
+        userRepo.save(User(email = email, passwordHash = passwordEncoder.encode(password)!!, roles = mutableSetOf(UserRole.ADMIN)))
         logger.info("Created initial admin user: $email")
     }
 }

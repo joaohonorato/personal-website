@@ -48,14 +48,14 @@ class UserController(private val userService: UserService) {
 data class CreateUserRequestDto(
     @field:Email @field:NotBlank val email: String,
     @field:NotBlank val password: String,
-    val role: UserRole = UserRole.READER,
+    val roles: Set<UserRole> = setOf(UserRole.READER),
 )
 
 data class UpdateUserRequestDto(
     @field:Email val email: String? = null,
     val password: String? = null,
-    val role: UserRole? = null,
+    val roles: Set<UserRole>? = null,
 )
 
-private fun CreateUserRequestDto.toServiceRequest() = CreateUserRequest(email, password, role)
-private fun UpdateUserRequestDto.toServiceRequest() = UpdateUserRequest(email, password, role)
+private fun CreateUserRequestDto.toServiceRequest() = CreateUserRequest(email, password, roles)
+private fun UpdateUserRequestDto.toServiceRequest() = UpdateUserRequest(email, password, roles)

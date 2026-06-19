@@ -11,10 +11,10 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
 ) {
-    fun login(email: String, password: String): Pair<String, String> {
+    fun login(email: String, password: String): Pair<String, List<String>> {
         val user = userRepo.findByEmail(email)
             .filter { passwordEncoder.matches(password, it.passwordHash) }
             .orElseThrow { BadCredentialsException("Invalid credentials") }
-        return Pair(jwtService.generate(user), user.role.name)
+        return Pair(jwtService.generate(user), user.roles.map { it.name })
     }
 }

@@ -19,7 +19,7 @@ class JwtService(
     fun generate(user: User): String = Jwts.builder()
         .subject(user.id.toString())
         .claim("email", user.email)
-        .claim("role", user.role.name)
+        .claim("roles", user.roles.map { it.name })
         .issuedAt(Date())
         .expiration(Date(System.currentTimeMillis() + expirationDays * 24 * 60 * 60 * 1000))
         .signWith(key)

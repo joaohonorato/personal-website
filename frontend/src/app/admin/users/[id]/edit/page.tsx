@@ -21,7 +21,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: "28px", letterSpacing: "1px", marginBottom: "32px" }}>
         Editar usuário
       </h1>
-      <UserForm action={action} defaultValues={{ email: user.email, role: user.role }} isEdit />
+      <UserForm action={action} defaultValues={{ email: user.email, roles: user.roles }} isEdit />
     </div>
   );
 }

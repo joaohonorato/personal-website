@@ -26,9 +26,11 @@ class JwtAuthFilter(private val jwtService: JwtService) : OncePerRequestFilter()
             val token = header.removePrefix("Bearer ").trim()
             runCatching {
                 val claims = jwtService.parseClaims(token)
-                val role = claims["role"] as? String ?: "READER"
+                @Suppress("UNCHECKED_CAST")
+                val roles = (claims["roles"] as? List<String>) ?: listOf("READER")
+                val authorities = roles.map { SimpleGrantedAuthority("ROLE_$it") }
                 SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(
-                    claims.subject, null, listOf(SimpleGrantedAuthority("ROLE_$role"))
+                    claims.subject, null, authorities
                 )
             }.onFailure { log.warn("JWT inválido: ${it.message}") }
         }
