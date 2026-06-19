@@ -86,9 +86,12 @@ import article_agent as _agent
 
 def _init_blog_token() -> None:
     global BLOG_ADMIN_TOKEN
-    token = _resolve_blog_token()
-    BLOG_ADMIN_TOKEN = token
-    _agent.BLOG_ADMIN_TOKEN = token
+    try:
+        token = _resolve_blog_token()
+        BLOG_ADMIN_TOKEN = token
+        _agent.BLOG_ADMIN_TOKEN = token
+    except Exception as exc:
+        print(f"WARNING: Could not resolve blog token: {exc}")
 
 
 threading.Thread(target=_init_blog_token, daemon=True).start()
@@ -416,6 +419,9 @@ Rules:
 
 @app.post("/review/{post_id}")
 async def review_post(post_id: int):
+    if not BLOG_ADMIN_TOKEN:
+        raise HTTPException(503, "Blog token not available — check BLOG_ADMIN_TOKEN or BLOG_EMAIL+BLOG_PASSWORD env vars")
+
     resp = requests.get(
         f"{BLOG_API_URL}/api/posts/id/{post_id}",
         headers={"Authorization": f"Bearer {BLOG_ADMIN_TOKEN}"},
