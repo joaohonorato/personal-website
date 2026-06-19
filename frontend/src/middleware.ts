@@ -1,11 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (!pathname.startsWith("/admin")) {
-    return NextResponse.next({ request });
-  }
 
   if (pathname === "/admin/login") {
     return NextResponse.next({ request });
@@ -16,14 +12,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  const role = request.cookies.get("user_role")?.value;
+  const userRoles = (request.cookies.get("user_roles")?.value ?? "").split(",").filter(Boolean);
 
-  if (role === "READER") {
+  if (userRoles.includes("READER") && userRoles.length === 1) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  const adminOnlyPaths = ["/admin/users", "/admin/projects"];
-  if (adminOnlyPaths.some((p) => pathname.startsWith(p)) && role !== "ADMIN") {
+  const adminOnlyPaths = ["/admin/users", "/admin/projects", "/admin/sync"];
+  if (adminOnlyPaths.some((p) => pathname.startsWith(p)) && !userRoles.includes("ADMIN")) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 

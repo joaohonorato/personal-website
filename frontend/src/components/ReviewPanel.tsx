@@ -20,6 +20,7 @@ type Suggestion = {
   suggestion: string;
   reason: string;
   priority: "high" | "medium" | "low";
+  improvesDimension?: keyof ScoreBreakdown;
 };
 
 type Review = {
@@ -80,22 +81,22 @@ export function ReviewPanel({ postId }: { postId: number }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [result, setResult] = useState<ReviewResult | null>(null);
+  const [previousScore, setPreviousScore] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [approved, setApproved] = useState<Set<string>>(new Set());
-  const [isPending, startTransition] = useTransition();
-  const [applied, setApplied] = useState(false);
+  const [, startTransition] = useTransition();
+  const [isApplying, setIsApplying] = useState(false);
 
-  async function handleReview() {
+  async function handleReview(prevScore?: number) {
+    if (prevScore !== undefined) setPreviousScore(prevScore);
     setStatus("loading");
     setResult(null);
     setApproved(new Set());
-    setApplied(false);
     try {
       const res = await fetch(`/api/agent/review/${postId}`, { method: "POST" });
       if (!res.ok) throw new Error(`Erro ${res.status}`);
       const data: ReviewResult = await res.json();
       setResult(data);
-      // Pre-select high priority suggestions
       const highPriority = new Set(
         data.review.suggestions.filter((s) => s.priority === "high").map((s) => s.id)
       );
@@ -125,14 +126,21 @@ export function ReviewPanel({ postId }: { postId: number }) {
     return updated;
   }
 
-  function handleApply() {
+  async function handleApply() {
     if (!result || approved.size === 0) return;
     const newContent = applyTextSuggestions(result.post.content, result.review.suggestions);
-    startTransition(async () => {
+    const scoreBeforeApply = result.review.score;
+    setIsApplying(true);
+    try {
       await applyReviewChanges(postId, result.post, newContent);
-      setApplied(true);
-      router.refresh();
-    });
+      startTransition(() => router.refresh());
+      await handleReview(scoreBeforeApply);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao aplicar");
+      setStatus("error");
+    } finally {
+      setIsApplying(false);
+    }
   }
 
   const review = result?.review;
@@ -213,6 +221,17 @@ export function ReviewPanel({ postId }: { postId: number }) {
                   <div style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "1px", marginTop: "4px" }}>
                     / 10
                   </div>
+                  {previousScore !== null && (
+                    <div style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      marginTop: "6px",
+                      color: review.score > previousScore ? "#4a9079" : review.score < previousScore ? "#e53e3e" : "#888",
+                    }}>
+                      {review.score > previousScore ? "▲" : review.score < previousScore ? "▼" : "="}{" "}
+                      {Math.abs(review.score - previousScore).toFixed(1)}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {(Object.entries(review.scoreBreakdown) as [keyof ScoreBreakdown, number][]).map(([key, val]) => (
@@ -299,40 +318,33 @@ export function ReviewPanel({ postId }: { postId: number }) {
 
                   {/* Actions */}
                   <div style={{ display: "flex", gap: "10px", marginTop: "16px", alignItems: "center" }}>
-                    {applied ? (
-                      <span style={{ fontSize: "13px", color: "#4a9079", fontWeight: 700 }}>
-                        ✅ {approved.size} ajuste(s) aplicado(s) com sucesso
-                      </span>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleApply}
-                          disabled={approved.size === 0 || isPending}
-                          style={{
-                            border: "2px solid #111",
-                            background: approved.size === 0 ? "#eee" : "#111",
-                            color: approved.size === 0 ? "#999" : "#FFD700",
-                            padding: "10px 20px",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            letterSpacing: "1px",
-                            textTransform: "uppercase",
-                            cursor: approved.size === 0 ? "not-allowed" : "pointer",
-                            fontFamily: "inherit",
-                          }}
-                        >
-                          {isPending ? "Aplicando..." : `Aplicar ${approved.size} selecionado(s)`}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleReview}
-                          style={{ border: "2px solid #111", background: "none", padding: "10px 20px", fontSize: "12px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", cursor: "pointer", fontFamily: "inherit", color: "#555" }}
-                        >
-                          Reanalisar
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      onClick={handleApply}
+                      disabled={approved.size === 0 || isApplying}
+                      style={{
+                        border: "2px solid #111",
+                        background: approved.size === 0 || isApplying ? "#eee" : "#111",
+                        color: approved.size === 0 || isApplying ? "#999" : "#FFD700",
+                        padding: "10px 20px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        letterSpacing: "1px",
+                        textTransform: "uppercase",
+                        cursor: approved.size === 0 || isApplying ? "not-allowed" : "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {isApplying ? "Aplicando e reavaliando..." : `Aplicar ${approved.size} selecionado(s)`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReview()}
+                      disabled={isApplying}
+                      style={{ border: "2px solid #111", background: "none", padding: "10px 20px", fontSize: "12px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", cursor: isApplying ? "not-allowed" : "pointer", fontFamily: "inherit", color: "#555" }}
+                    >
+                      Reanalisar
+                    </button>
                   </div>
                 </div>
               )}

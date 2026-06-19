@@ -399,15 +399,21 @@ The JSON must follow this exact schema:
       "location": "<section or paragraph reference>",
       "original": "<exact verbatim excerpt from the article — must match the article text exactly>",
       "suggestion": "<improved replacement text>",
-      "reason": "<one sentence explaining the improvement>",
-      "priority": "<high|medium|low>"
+      "reason": "<one sentence explaining which score dimension this improves and why>",
+      "priority": "<high|medium|low>",
+      "improvesDimension": "<citations|sources|textQuality|coherence|cohesion>"
     }
   ]
 }
 
 Rules:
 - Each suggestion's "original" field MUST be an exact substring found verbatim in the article content
-- Limit to 8 suggestions max, prioritising the highest-impact changes
+- Every suggestion MUST genuinely improve the article — only include changes you are confident will raise the score
+- Suggestions marked "high" priority must each raise the relevant dimension score by at least 0.5 points if applied
+- Applying all "high" priority suggestions together MUST result in a higher overall score than the current one
+- Prefer fewer, high-impact suggestions over many low-value ones — quality over quantity
+- Limit to 8 suggestions max, ranked by impact (highest first)
+- If the article already scores ≥ 9.0 in a dimension, do not suggest changes for that dimension
 - Score dimension definitions:
     citations:   presence and correctness of in-text citations
     sources:     reliability and variety of referenced sources
