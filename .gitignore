@@ -4,3 +4,11 @@
 node_modules/
 *.tsbuildinfo
 .DS_Store
+
+# Agent
+agent/.env
+agent/drafts/
+agent/outline.md
+agent/feedback.md
+__pycache__/
+*.pyc

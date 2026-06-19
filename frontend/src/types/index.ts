@@ -17,6 +17,7 @@ export type Post = {
   tags: string[];
   published: boolean;
   generatedByAgent: boolean;
+  coverImageUrl: string | null;
   readingTimeMin: number;
   createdAt: string;
   updatedAt: string;

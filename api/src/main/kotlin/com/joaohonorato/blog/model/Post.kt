@@ -37,6 +37,9 @@ class Post(
     @Column(name = "generated_by_agent", nullable = false)
     var generatedByAgent: Boolean = false,
 
+    @Column(name = "cover_image_url")
+    var coverImageUrl: String? = null,
+
     @Column(name = "reading_time_min", nullable = false)
     var readingTimeMin: Int = 1,
 

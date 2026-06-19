@@ -1,8 +1,8 @@
 "use client";
 
-import DOMPurify from "dompurify";
 import { useRef, useState } from "react";
 import { SubmitButton } from "@/app/admin/components/SubmitButton";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
 type DefaultValues = {
   title: string;
@@ -136,7 +136,7 @@ export function PostForm({ action, defaultValues }: Props) {
 
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-          <label style={{ ...labelStyle, marginBottom: 0 }}>Conteúdo (HTML)</label>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Conteúdo (Markdown)</label>
           <button
             type="button"
             onClick={togglePreview}
@@ -156,30 +156,17 @@ export function PostForm({ action, defaultValues }: Props) {
           </button>
         </div>
 
-        {preview ? (
-          <div
-            style={{
-              border: "2px solid #111",
-              padding: "24px 28px",
-              minHeight: "260px",
-              background: "#fff",
-              fontFamily: "var(--font-body, Georgia, serif)",
-              fontSize: "16px",
-              lineHeight: "1.8",
-              color: "#222",
-            }}
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
-          />
-        ) : (
-          <textarea
-            ref={contentRef}
-            name="content"
-            required
-            rows={16}
-            defaultValue={defaultValues?.content}
-            style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: "13px" }}
-          />
-        )}
+        <div style={{ display: preview ? "block" : "none", border: "2px solid #111", padding: "24px 28px", minHeight: "260px", background: "#fff" }}>
+          <MarkdownRenderer content={previewHtml} />
+        </div>
+        <textarea
+          ref={contentRef}
+          name="content"
+          required
+          rows={16}
+          defaultValue={defaultValues?.content}
+          style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: "13px", display: preview ? "none" : "block" }}
+        />
       </div>
 
       <div style={{ display: "flex", gap: "24px" }}>

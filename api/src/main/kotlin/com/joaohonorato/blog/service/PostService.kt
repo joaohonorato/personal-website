@@ -46,6 +46,7 @@ class PostService(private val postRepo: PostRepository) {
             readingTimeMin = request.readingTimeMin
             published = request.published
             generatedByAgent = request.generatedByAgent
+            coverImageUrl = request.coverImageUrl
             tags = request.tags.toTypedArray()
             updatedAt = Instant.now()
         }
@@ -68,6 +69,7 @@ data class PostRequest(
     val readingTimeMin: Int = 1,
     val published: Boolean = true,
     val generatedByAgent: Boolean = false,
+    val coverImageUrl: String? = null,
     val tags: List<String> = emptyList(),
 )
 
@@ -80,5 +82,6 @@ private fun PostRequest.toEntity() = Post(
     readingTimeMin = readingTimeMin,
     published = published,
     generatedByAgent = generatedByAgent,
+    coverImageUrl = coverImageUrl,
     tags = tags.toTypedArray(),
 )

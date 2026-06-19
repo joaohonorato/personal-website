@@ -141,4 +141,24 @@ body {
 
 /* Utilities */
 .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+/* Markdown body */
+.md-body { font-size: 16px; line-height: 1.8; color: #222; }
+.md-body h1, .md-body h2, .md-body h3, .md-body h4 { font-family: var(--font-display); letter-spacing: 1px; margin: 32px 0 12px; line-height: 1.2; }
+.md-body h1 { font-size: 36px; }
+.md-body h2 { font-size: 28px; border-bottom: 2px solid #111; padding-bottom: 6px; }
+.md-body h3 { font-size: 22px; }
+.md-body h4 { font-size: 18px; }
+.md-body p { margin: 16px 0; }
+.md-body ul, .md-body ol { margin: 16px 0 16px 28px; }
+.md-body li { margin: 6px 0; }
+.md-body blockquote { border-left: 4px solid #FFD700; padding: 8px 20px; margin: 20px 0; background: #fff; font-style: italic; color: #555; }
+.md-body a { color: #111; text-decoration: underline; text-underline-offset: 3px; }
+.md-body a:hover { color: #555; }
+.md-body table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+.md-body th { background: #111; color: #F5F0E8; padding: 10px 14px; text-align: left; font-family: var(--font-display); letter-spacing: 0.5px; }
+.md-body td { padding: 10px 14px; border-bottom: 1px solid #ddd; }
+.md-body tr:nth-child(even) td { background: #f9f9f9; }
+.md-body img { max-width: 100%; border: 2px solid #111; margin: 16px 0; }
+.md-body hr { border: none; border-top: 2px solid #111; margin: 32px 0; }
 .main { display: flex; flex-direction: column; gap: 3px; }

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPostBySlug } from "@/lib/posts";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(post.createdAt))}
         {" · "}{post.readingTimeMin} min de leitura
       </div>
-      <div
-        style={{ fontFamily: "var(--font-body)", fontSize: "16px", lineHeight: "1.8", color: "#222" }}
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
+      <MarkdownRenderer content={post.content} />
       <div style={{ marginTop: "32px", paddingTop: "16px", borderTop: "2px solid #111", display: "flex", gap: "6px", flexWrap: "wrap" }}>
         {(post.tags ?? []).map((tag) => (
           <span key={tag} className="badge-outline">{tag}</span>

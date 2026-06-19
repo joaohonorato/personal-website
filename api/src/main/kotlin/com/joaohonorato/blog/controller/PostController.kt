@@ -49,23 +49,25 @@ class PostController(private val postService: PostService) {
 data class PostRequestDto(
     @field:NotBlank val title: String,
     @field:NotBlank val slug: String,
-    val excerpt: String = "",
-    val content: String = "",
-    val category: String = "",
+    val excerpt: String? = null,
+    val content: String? = null,
+    val category: String? = null,
     @field:Min(1) val readingTimeMin: Int = 1,
     val published: Boolean = true,
     val generatedByAgent: Boolean = false,
-    val tags: List<String> = emptyList(),
+    val coverImageUrl: String? = null,
+    val tags: List<String>? = null,
 )
 
 private fun PostRequestDto.toServiceRequest() = PostRequest(
     title = title,
     slug = slug,
-    excerpt = excerpt,
-    content = content,
-    category = category,
+    excerpt = excerpt ?: "",
+    content = content ?: "",
+    category = category ?: "",
     readingTimeMin = readingTimeMin,
     published = published,
     generatedByAgent = generatedByAgent,
-    tags = tags,
+    coverImageUrl = coverImageUrl,
+    tags = tags ?: emptyList(),
 )

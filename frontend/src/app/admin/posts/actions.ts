@@ -26,13 +26,14 @@ export async function createPost(formData: FormData) {
     method: "POST",
     body: JSON.stringify({
       title, slug,
-      excerpt: formData.get("excerpt") as string,
-      content: formData.get("content") as string,
-      category: formData.get("category") as string,
-      tags: parseTags(formData.get("tags") as string),
+      excerpt: (formData.get("excerpt") as string) ?? "",
+      content: (formData.get("content") as string) ?? "",
+      category: (formData.get("category") as string) ?? "",
+      tags: parseTags((formData.get("tags") as string) ?? ""),
       readingTimeMin: Number(formData.get("reading_time_min")) || 1,
       published: formData.get("published") === "on",
       generatedByAgent: formData.get("generated_by_agent") === "on",
+      coverImageUrl: (formData.get("cover_image_url") as string) || null,
     }),
   }, true);
 
@@ -49,13 +50,14 @@ export async function updatePost(id: number, formData: FormData) {
     method: "PUT",
     body: JSON.stringify({
       title, slug,
-      excerpt: formData.get("excerpt") as string,
-      content: formData.get("content") as string,
-      category: formData.get("category") as string,
-      tags: parseTags(formData.get("tags") as string),
+      excerpt: (formData.get("excerpt") as string) ?? "",
+      content: (formData.get("content") as string) ?? "",
+      category: (formData.get("category") as string) ?? "",
+      tags: parseTags((formData.get("tags") as string) ?? ""),
       readingTimeMin: Number(formData.get("reading_time_min")) || 1,
       published: formData.get("published") === "on",
       generatedByAgent: formData.get("generated_by_agent") === "on",
+      coverImageUrl: (formData.get("cover_image_url") as string) || null,
     }),
   }, true);
 
