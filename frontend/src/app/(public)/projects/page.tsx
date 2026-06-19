@@ -22,11 +22,11 @@ export default async function ProjectsPage() {
       {projects.length === 0 ? (
         <p style={{ color: "#888", fontSize: "14px" }}>Nenhum projeto publicado ainda.</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#111" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {projects.map((project) => (
             <div
               key={project.id}
-              style={{ background: "#fff", display: "grid", gridTemplateColumns: "1fr 260px", borderTop: "none" }}
+              style={{ background: "#fff", display: "grid", gridTemplateColumns: "1fr 260px", border: "2px solid #111" }}
             >
               <div style={{ padding: "24px 28px", borderRight: "3px solid #111" }}>
                 <h2 style={{ fontFamily: "var(--font-display)", fontSize: "22px", letterSpacing: "1px", marginBottom: "8px" }}>

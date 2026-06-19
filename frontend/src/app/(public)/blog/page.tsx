@@ -13,7 +13,7 @@ export default async function BlogPage() {
         <div className="section-line" />
         <span style={{ fontSize: "11px", color: "#888" }}>{posts.length} artigos</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px", background: "#111", border: "3px solid #111" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
         {posts.map((post) => (
           <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: "none" }}>
             <div className="comic-card" style={{ height: "100%" }}>
