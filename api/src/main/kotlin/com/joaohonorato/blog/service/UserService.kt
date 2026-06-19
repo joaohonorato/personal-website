@@ -46,9 +46,7 @@ class UserService(
         }
         request.password?.let { user.passwordHash = passwordEncoder.encode(it)!! }
         request.roles?.let {
-            if (user.id.toString() == currentUserId)
-                throw BadRequestException("Cannot change your own roles")
-            user.roles = it.toMutableSet()
+            if (user.id.toString() != currentUserId) user.roles = it.toMutableSet()
         }
         return userRepo.save(user).toResponse()
     }

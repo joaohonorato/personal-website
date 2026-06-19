@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import type { Route } from "next";
 
-function DashCard({ href, label, title, accent = false }: { href: string; label: string; title: string; accent?: boolean }) {
+function DashCard({ href, label, title, accent = false }: { href: Route; label: string; title: string; accent?: boolean }) {
   return (
     <Link href={href} style={{ textDecoration: "none" }}>
       <div className="dash-card" style={{
