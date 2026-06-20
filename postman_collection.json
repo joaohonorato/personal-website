@@ -7,9 +7,9 @@
     { "key": "auth_url",             "value": "https://auth-server-production-e7e8.up.railway.app" },
     { "key": "api_url",              "value": "https://personal-website-production-33a5.up.railway.app" },
     { "key": "frontend_client_id",   "value": "blog-frontend" },
-    { "key": "frontend_client_secret","value": "Ti7A71SyWPPkZBG+e4LnyHQo321jxK98Q/k09r3MyPU=" },
+    { "key": "frontend_client_secret","value": "bpifgLkCyXk-RWn6MO3KQpEPet5JLWaoki4cQdLFZf4" },
     { "key": "agent_client_id",      "value": "blog-agent" },
-    { "key": "agent_client_secret",  "value": "KrkxfG6yI1wcOVrr9itZMNenejneQ/CS1HMI6+fQvMo=" },
+    { "key": "agent_client_secret",  "value": "u22CWbZFODeVgFvsBFFWk-B2bOcQFO5dFTNTUWpDg2Q" },
     { "key": "admin_email",          "value": "joaohonorato@gmail.com" },
     { "key": "admin_password",       "value": "rasauq86" },
     { "key": "access_token",         "value": "" }

@@ -33,6 +33,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Refr
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.oauth2.server.authorization.authentication.ClientSecretAuthenticationProvider
 import org.springframework.security.web.SecurityFilterChain
 import java.time.Duration
 import java.util.UUID
@@ -54,6 +55,15 @@ class AuthorizationServerConfig(
         tokenGenerator: OAuth2TokenGenerator<out OAuth2Token>,
     ): SecurityFilterChain {
         val configurer = OAuth2AuthorizationServerConfigurer()
+
+        configurer.clientAuthentication { clientAuth ->
+            val clientSecretProvider = ClientSecretAuthenticationProvider(
+                registeredClientRepository(),
+                authorizationService,
+            )
+            clientSecretProvider.setPasswordEncoder(passwordEncoder)
+            clientAuth.authenticationProvider(clientSecretProvider)
+        }
 
         configurer.tokenEndpoint { tokenEndpoint ->
             tokenEndpoint.accessTokenRequestConverter(PasswordGrantAuthenticationConverter())
