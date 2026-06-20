@@ -3,6 +3,7 @@ package com.joaohonorato.auth.grant
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames
@@ -15,13 +16,17 @@ class PasswordGrantAuthenticationConverter : AuthenticationConverter {
         if (grantType != "password") return null
 
         val clientPrincipal = SecurityContextHolder.getContext().authentication
+            ?: throw OAuth2AuthenticationException(
+                OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT, "Client not authenticated", null)
+            )
 
-        val username = request.getParameter(OAuth2ParameterNames.USERNAME)
-            ?: throw org.springframework.security.oauth2.core.OAuth2AuthenticationException(
+        // OAuth2ParameterNames.USERNAME/PASSWORD were removed in Spring Security 7 (ROPC is OAuth 2.0 only)
+        val username = request.getParameter("username")
+            ?: throw OAuth2AuthenticationException(
                 OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "username is required", null)
             )
-        val password = request.getParameter(OAuth2ParameterNames.PASSWORD)
-            ?: throw org.springframework.security.oauth2.core.OAuth2AuthenticationException(
+        val password = request.getParameter("password")
+            ?: throw OAuth2AuthenticationException(
                 OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "password is required", null)
             )
 
