@@ -47,17 +47,30 @@ COVER_IMAGE_ENABLED   = bool(OPENAI_API_KEY and CLOUDINARY_CLOUD_NAME)
 ALLOWED_ROLES = {"ADMIN", "AI_USER"}
 
 # JWKS cache — refreshed on first request; RS256 public keys from auth server
-_jwks_cache: dict | None = None
+_jwks_cache: list | None = None
 
-def _get_jwks() -> dict:
+def _get_jwks_keys() -> list:
     global _jwks_cache
     if _jwks_cache is None:
         if not AUTH_SERVER_URL:
-            return {}
+            return []
         resp = requests.get(f"{AUTH_SERVER_URL}/oauth2/jwks", timeout=10)
         resp.raise_for_status()
-        _jwks_cache = resp.json()
+        _jwks_cache = resp.json().get("keys", [])
     return _jwks_cache
+
+def _select_key(token: str) -> dict:
+    keys = _get_jwks_keys()
+    if not keys:
+        raise JWTError("No JWKS keys available")
+    try:
+        kid = jose_jwt.get_unverified_header(token).get("kid")
+    except JWTError:
+        kid = None
+    for k in keys:
+        if kid is None or k.get("kid") == kid:
+            return k
+    return keys[0]
 
 # ---------------------------------------------------------------------------
 # Blog token — resolved at startup (token or email+password)
@@ -154,10 +167,12 @@ async def verify_jwt(request: Request, call_next):
 
     token = auth[len("Bearer "):].strip()
     try:
-        jwks = _get_jwks()
-        payload = jose_jwt.decode(token, jwks, algorithms=["RS256"])
+        key = _select_key(token)
+        payload = jose_jwt.decode(token, key, algorithms=["RS256"])
     except JWTError as exc:
         return JSONResponse({"error": f"Invalid token: {exc}"}, status_code=401)
+    except Exception as exc:
+        return JSONResponse({"error": f"Auth service unavailable: {exc}"}, status_code=503)
 
     roles = set(payload.get("roles", []))
     if not roles.intersection(ALLOWED_ROLES):
