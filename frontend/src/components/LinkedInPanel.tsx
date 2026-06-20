@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL ?? "http://localhost:8001";
+const AGENT_URL = "/api/agent";
 
 type Phase =
   | "idle"
