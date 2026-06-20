@@ -20,15 +20,15 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator
-import org.springframework.security.oauth2.server.authorization.web.configuration.OAuth2AuthorizationServerConfiguration
-import org.springframework.security.oauth2.server.authorization.web.configurers.OAuth2AuthorizationServerConfigurer
-import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.web.SecurityFilterChain
 import java.time.Duration
 import java.util.UUID
 
@@ -51,7 +51,7 @@ class AuthorizationServerConfig(
         val configurer = OAuth2AuthorizationServerConfigurer()
 
         configurer.tokenEndpoint { tokenEndpoint ->
-            tokenEndpoint.authenticationConverter(PasswordGrantAuthenticationConverter())
+            tokenEndpoint.accessTokenRequestConverter(PasswordGrantAuthenticationConverter())
             tokenEndpoint.authenticationProvider(
                 PasswordGrantAuthenticationProvider(
                     userDetailsService,
@@ -116,10 +116,9 @@ class AuthorizationServerConfig(
                 if (userDetails is org.springframework.security.core.userdetails.UserDetails) {
                     context.claims.apply {
                         claim("email", userDetails.username ?: "")
-                        claim("roles", userDetails.authorities.map { it.authority.removePrefix("ROLE_") })
+                        claim("roles", userDetails.authorities.map { it.authority?.removePrefix("ROLE_") ?: "" })
                     }
                 } else if (principal.authorities.isEmpty()) {
-                    // client_credentials: expose scopes as roles for the agent
                     context.claims.claim("roles", context.registeredClient?.scopes?.toList() ?: emptyList<String>())
                 }
             }
