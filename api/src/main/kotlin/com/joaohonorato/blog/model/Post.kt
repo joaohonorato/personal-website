@@ -48,4 +48,10 @@ class Post(
 
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "linkedin_post_url")
+    var linkedinPostUrl: String? = null,
+
+    @Column(name = "linkedin_published_at")
+    var linkedinPublishedAt: Instant? = null,
 )

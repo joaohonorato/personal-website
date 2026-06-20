@@ -21,12 +21,12 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import anthropic
-import jwt as pyjwt
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from jose import JWTError, jwt as jose_jwt
 from pydantic import BaseModel
 
 load_dotenv(Path(__file__).parent / ".env")
@@ -38,15 +38,26 @@ load_dotenv(Path(__file__).parent / ".env")
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 TAVILY_API_KEY    = os.environ["TAVILY_API_KEY"]
 BLOG_API_URL      = os.environ.get("BLOG_API_URL", "http://localhost:8080")
+AUTH_SERVER_URL   = os.environ.get("AUTH_SERVER_URL", "")
 
 OPENAI_API_KEY        = os.environ.get("OPENAI_API_KEY", "")
 CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
 COVER_IMAGE_ENABLED   = bool(OPENAI_API_KEY and CLOUDINARY_CLOUD_NAME)
 
-# JWT secret — same value as app.jwt-secret in Spring Boot (app.properties)
-# If not set, JWT validation is skipped (local dev without auth)
-JWT_SECRET    = os.environ.get("JWT_SECRET", "")
 ALLOWED_ROLES = {"ADMIN", "AI_USER"}
+
+# JWKS cache — refreshed on first request; RS256 public keys from auth server
+_jwks_cache: dict | None = None
+
+def _get_jwks() -> dict:
+    global _jwks_cache
+    if _jwks_cache is None:
+        if not AUTH_SERVER_URL:
+            return {}
+        resp = requests.get(f"{AUTH_SERVER_URL}/.well-known/jwks.json", timeout=10)
+        resp.raise_for_status()
+        _jwks_cache = resp.json()
+    return _jwks_cache
 
 # ---------------------------------------------------------------------------
 # Blog token — resolved at startup (token or email+password)
@@ -60,20 +71,30 @@ def _resolve_blog_token() -> str:
 
     email    = os.environ.get("BLOG_EMAIL", "")
     password = os.environ.get("BLOG_PASSWORD", "")
+    client_id     = os.environ.get("AUTH_CLIENT_ID", "blog-agent")
+    client_secret = os.environ.get("AUTH_CLIENT_SECRET", "")
     if not email or not password:
         print("WARNING: No blog credentials configured. Set BLOG_ADMIN_TOKEN or BLOG_EMAIL+BLOG_PASSWORD.")
         return ""
 
+    if not AUTH_SERVER_URL:
+        raise RuntimeError("AUTH_SERVER_URL is not set — cannot authenticate")
+
     resp = requests.post(
-        f"{BLOG_API_URL}/api/auth/login",
-        json={"email": email, "password": password},
+        f"{AUTH_SERVER_URL}/oauth2/token",
+        data={
+            "grant_type": "password",
+            "username": email,
+            "password": password,
+        },
+        auth=(client_id, client_secret),
         timeout=15,
     )
     if not resp.ok:
-        raise RuntimeError(f"Blog auth failed: {resp.status_code} — {resp.text}")
+        raise RuntimeError(f"Auth server login failed: {resp.status_code} — {resp.text}")
 
-    token = resp.json()["token"]
-    print("✓ Authenticated with blog API via email/password")
+    token = resp.json()["access_token"]
+    print("✓ Authenticated with auth server via email/password")
     return token
 
 
@@ -123,8 +144,8 @@ app.add_middleware(
 async def verify_jwt(request: Request, call_next):
     if request.url.path == "/health":
         return await call_next(request)
-    # Skip validation in local dev when JWT_SECRET is not configured
-    if not JWT_SECRET:
+    # Skip validation when auth server is not configured (local dev)
+    if not AUTH_SERVER_URL:
         return await call_next(request)
 
     auth = request.headers.get("Authorization", "")
@@ -133,13 +154,9 @@ async def verify_jwt(request: Request, call_next):
 
     token = auth[len("Bearer "):].strip()
     try:
-        payload = pyjwt.decode(
-            token, JWT_SECRET,
-            algorithms=["HS256", "HS384", "HS512"],
-        )
-    except pyjwt.ExpiredSignatureError:
-        return JSONResponse({"error": "Token expired"}, status_code=401)
-    except pyjwt.InvalidTokenError as exc:
+        jwks = _get_jwks()
+        payload = jose_jwt.decode(token, jwks, algorithms=["RS256"])
+    except JWTError as exc:
         return JSONResponse({"error": f"Invalid token: {exc}"}, status_code=401)
 
     roles = set(payload.get("roles", []))
@@ -463,6 +480,182 @@ async def review_post(post_id: int):
     review = json.loads(raw)
 
     return {"post": post, "review": review}
+
+
+# ---------------------------------------------------------------------------
+# Routes — LinkedIn publisher
+# ---------------------------------------------------------------------------
+
+LINKEDIN_ADAPT_PROMPT = """You are a content strategist adapting a technical blog post for LinkedIn.
+
+Rules:
+- LinkedIn posts are conversational, not academic
+- Max 1300 characters (LinkedIn limit)
+- Start with a strong hook (question or bold statement)
+- Use line breaks generously for readability
+- Add 3-5 relevant hashtags at the end
+- Do NOT use markdown headers or bullet lists — use plain text with spacing
+- Keep the core insight from the article but make it digestible for a general tech audience
+- End with a question or call-to-action to drive engagement
+
+Return ONLY the LinkedIn post text — no preamble, no explanation."""
+
+# job_id → { state: JobState, adapted_text: str, post_id: int }
+linkedin_jobs: dict[str, dict] = {}
+
+
+def _adapt_for_linkedin(post_content: str, post_title: str) -> str:
+    msg = anthropic_client.messages.create(
+        model="claude-opus-4-8",
+        max_tokens=1024,
+        system=LINKEDIN_ADAPT_PROMPT,
+        messages=[{
+            "role": "user",
+            "content": f"Title: {post_title}\n\n{post_content}",
+        }],
+    )
+    return msg.content[0].text.strip()
+
+
+def _run_linkedin_adapt(state: JobState, job_meta: dict) -> None:
+    try:
+        post_id = job_meta["post_id"]
+        resp = requests.get(
+            f"{BLOG_API_URL}/api/posts/id/{post_id}",
+            headers={"Authorization": f"Bearer {BLOG_ADMIN_TOKEN}"},
+            timeout=15,
+        )
+        if not resp.ok:
+            state.emit("error", message=f"Could not fetch post {post_id}: {resp.status_code}")
+            return
+
+        post = resp.json()
+        state.emit("adapting")
+
+        adapted = _adapt_for_linkedin(post["content"], post["title"])
+        job_meta["adapted_text"] = adapted
+        job_meta["post"] = post
+
+        state.emit("awaiting_linkedin_approval", text=adapted, title=post["title"])
+    except Exception as exc:
+        state.emit("error", message=str(exc))
+
+
+@app.post("/linkedin/adapt/{post_id}")
+async def linkedin_adapt(post_id: int):
+    if not BLOG_ADMIN_TOKEN:
+        raise HTTPException(503, "Blog token not available")
+
+    job_id = str(uuid.uuid4())
+    loop = asyncio.get_event_loop()
+    state = JobState(loop)
+    job_meta: dict = {"post_id": post_id, "adapted_text": "", "post": {}}
+    linkedin_jobs[job_id] = {"state": state, "meta": job_meta}
+
+    threading.Thread(
+        target=_run_linkedin_adapt,
+        args=(state, job_meta),
+        daemon=True,
+    ).start()
+
+    return {"jobId": job_id}
+
+
+@app.get("/linkedin/stream/{job_id}")
+async def linkedin_stream(job_id: str):
+    entry = linkedin_jobs.get(job_id)
+    if not entry:
+        raise HTTPException(404, "LinkedIn job not found")
+
+    state: JobState = entry["state"]
+
+    async def generator() -> AsyncGenerator[str, None]:
+        while True:
+            event = await state.queue.get()
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            if event["type"] in ("done", "error", "cancelled", "published"):
+                break
+
+    return StreamingResponse(
+        generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+class LinkedInIterateBody(BaseModel):
+    feedback: str
+
+
+@app.post("/linkedin/iterate/{job_id}")
+async def linkedin_iterate(job_id: str, body: LinkedInIterateBody):
+    """User wants to refine the adapted text before publishing."""
+    entry = linkedin_jobs.get(job_id)
+    if not entry:
+        raise HTTPException(404, "LinkedIn job not found")
+
+    meta = entry["meta"]
+    state: JobState = entry["state"]
+    post = meta.get("post", {})
+    current_text = meta.get("adapted_text", "")
+
+    def _iterate():
+        try:
+            msg = anthropic_client.messages.create(
+                model="claude-opus-4-8",
+                max_tokens=1024,
+                system=LINKEDIN_ADAPT_PROMPT,
+                messages=[
+                    {"role": "user", "content": f"Title: {post.get('title', '')}\n\n{post.get('content', '')}"},
+                    {"role": "assistant", "content": current_text},
+                    {"role": "user", "content": f"Please revise with this feedback: {body.feedback}"},
+                ],
+            )
+            revised = msg.content[0].text.strip()
+            meta["adapted_text"] = revised
+            state.emit("awaiting_linkedin_approval", text=revised, title=post.get("title", ""))
+        except Exception as exc:
+            state.emit("error", message=str(exc))
+
+    threading.Thread(target=_iterate, daemon=True).start()
+    return {"ok": True}
+
+
+class LinkedInApproveBody(BaseModel):
+    text: str | None = None  # override text if user edited manually
+
+
+@app.post("/linkedin/approve/{job_id}")
+async def linkedin_approve(job_id: str, body: LinkedInApproveBody):
+    """User approved — publish to LinkedIn via auth server proxy."""
+    entry = linkedin_jobs.get(job_id)
+    if not entry:
+        raise HTTPException(404, "LinkedIn job not found")
+
+    meta = entry["meta"]
+    state: JobState = entry["state"]
+    final_text = body.text or meta.get("adapted_text", "")
+    post_id = meta["post_id"]
+
+    def _publish():
+        try:
+            state.emit("publishing_linkedin")
+            resp = requests.post(
+                f"{AUTH_SERVER_URL}/linkedin/publish",
+                json={"postId": post_id, "text": final_text},
+                headers={"Authorization": f"Bearer {BLOG_ADMIN_TOKEN}"},
+                timeout=30,
+            )
+            if not resp.ok:
+                state.emit("error", message=f"LinkedIn publish failed: {resp.status_code} — {resp.text}")
+                return
+            result = resp.json()
+            state.emit("published", linkedinUrl=result.get("linkedinUrl"))
+        except Exception as exc:
+            state.emit("error", message=str(exc))
+
+    threading.Thread(target=_publish, daemon=True).start()
+    return {"ok": True}
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { updatePost } from "../../actions";
 import { PostForm } from "../../PostForm";
 import { ReviewPanel } from "@/components/ReviewPanel";
+import { LinkedInPanel } from "@/components/LinkedInPanel";
 
 export default async function EditPostPage({
   params,
@@ -26,6 +27,7 @@ export default async function EditPostPage({
         Editar — {post.title}
       </h1>
       <ReviewPanel postId={Number(id)} />
+      <LinkedInPanel postId={Number(id)} />
       <PostForm
         action={action}
         defaultValues={{

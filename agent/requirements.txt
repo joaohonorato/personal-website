@@ -2,7 +2,7 @@ anthropic>=0.40.0
 tavily-python>=0.5.0
 requests>=2.32.0
 python-dotenv>=1.0.0
-PyJWT>=2.9.0
+python-jose[cryptography]>=3.3.0
 
 # FastAPI server (agent/server.py)
 fastapi>=0.115.0

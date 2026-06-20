@@ -1,10 +1,9 @@
-package com.joaohonorato.blog.config
+package com.joaohonorato.auth.config
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.core.annotation.Order
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -17,25 +16,21 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 class SecurityConfig(
-    private val jwtAuthenticationConverter: JwtAuthenticationConverter,
     @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
 ) {
+
+    // Order(2) — runs after the authorization server filter chain (Order 1)
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    @Order(2)
+    fun defaultSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .cors { it.configurationSource(corsSource()) }
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authorizeHttpRequests {
-                it.requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{slug}", "/api/projects").permitAll()
-                it.anyRequest().authenticated()
-            }
-            .oauth2ResourceServer { oauth2 ->
-                oauth2.jwt { jwt ->
-                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
-                }
+            .authorizeHttpRequests { auth ->
+                auth.requestMatchers("/health", "/actuator/health").permitAll()
+                auth.anyRequest().authenticated()
             }
         return http.build()
     }
@@ -47,7 +42,7 @@ class SecurityConfig(
     fun corsSource(): CorsConfigurationSource {
         val config = CorsConfiguration().apply {
             allowedOrigins = this@SecurityConfig.allowedOrigins.split(",").map { it.trim() }
-            allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
             allowedHeaders = listOf("*")
             allowCredentials = true
         }

@@ -17,6 +17,8 @@ data class PostResponse(
     val readingTimeMin: Int,
     val createdAt: Instant,
     val updatedAt: Instant,
+    val linkedinPostUrl: String?,
+    val linkedinPublishedAt: Instant?,
 )
 
 fun Post.toResponse() = PostResponse(
@@ -33,4 +35,6 @@ fun Post.toResponse() = PostResponse(
     readingTimeMin = readingTimeMin,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    linkedinPostUrl = linkedinPostUrl,
+    linkedinPublishedAt = linkedinPublishedAt,
 )

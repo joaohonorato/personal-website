@@ -2,33 +2,53 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { API_URL } from "@/lib/config";
+import { AUTH_URL } from "@/lib/config";
+
+const AUTH_CLIENT_ID     = process.env.AUTH_CLIENT_ID     ?? "blog-frontend";
+const AUTH_CLIENT_SECRET = process.env.AUTH_CLIENT_SECRET ?? "";
 
 export async function signIn(formData: FormData) {
-  const email = formData.get("email") as string;
+  const email    = formData.get("email")    as string;
   const password = formData.get("password") as string;
 
-  const res = await fetch(`${API_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+  const body = new URLSearchParams({
+    grant_type: "password",
+    username:   email,
+    password:   password,
+  });
+
+  const credentials = Buffer.from(`${AUTH_CLIENT_ID}:${AUTH_CLIENT_SECRET}`).toString("base64");
+
+  const res = await fetch(`${AUTH_URL}/oauth2/token`, {
+    method:  "POST",
+    headers: {
+      "Content-Type":  "application/x-www-form-urlencoded",
+      "Authorization": `Basic ${credentials}`,
+    },
+    body: body.toString(),
   });
 
   if (!res.ok) {
     redirect("/admin/login?error=invalid_credentials");
   }
 
-  const { token, roles } = await res.json() as { token: string; roles: string[] };
+  const data = await res.json() as { access_token: string; roles?: string[] };
+  const token = data.access_token;
+
+  // Decode roles from JWT payload (no verification needed here — server already validated)
+  const payloadB64 = token.split(".")[1];
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+  const roles: string[] = payload.roles ?? [];
 
   const cookieStore = await cookies();
   const cookieOpts = {
-    secure: process.env.NODE_ENV === "production",
+    secure:   process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
+    maxAge:   30 * 24 * 60 * 60,
+    path:     "/",
   };
-  cookieStore.set("auth_token", token, { ...cookieOpts, httpOnly: true });
-  cookieStore.set("user_roles", roles.join(","), { ...cookieOpts, httpOnly: false });
+  cookieStore.set("auth_token",  token,            { ...cookieOpts, httpOnly: true  });
+  cookieStore.set("user_roles",  roles.join(","),  { ...cookieOpts, httpOnly: false });
 
   redirect("/admin");
 }
