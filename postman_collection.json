@@ -29,7 +29,7 @@
           "name": "JWKS",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{auth_url}}/.well-known/jwks.json", "host": ["{{auth_url}}"], "path": [".well-known", "jwks.json"] }
+            "url": { "raw": "{{auth_url}}/oauth2/jwks", "host": ["{{auth_url}}"], "path": ["oauth2", "jwks"] }
           }
         },
         {

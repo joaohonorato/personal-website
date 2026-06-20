@@ -29,7 +29,7 @@ class SecurityConfig(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/health", "/actuator/health").permitAll()
+                auth.requestMatchers("/health", "/actuator/health", "//health").permitAll()
                 auth.anyRequest().authenticated()
             }
         return http.build()
