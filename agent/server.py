@@ -54,7 +54,7 @@ def _get_jwks() -> dict:
     if _jwks_cache is None:
         if not AUTH_SERVER_URL:
             return {}
-        resp = requests.get(f"{AUTH_SERVER_URL}/.well-known/jwks.json", timeout=10)
+        resp = requests.get(f"{AUTH_SERVER_URL}/oauth2/jwks", timeout=10)
         resp.raise_for_status()
         _jwks_cache = resp.json()
     return _jwks_cache
