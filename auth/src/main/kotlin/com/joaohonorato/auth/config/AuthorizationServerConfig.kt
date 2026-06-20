@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.OAuth2Token
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
@@ -24,7 +25,11 @@ import org.springframework.security.config.annotation.web.configuration.OAuth2Au
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings
+import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
+import org.springframework.security.oauth2.server.authorization.token.JwtGenerator
+import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator
+import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -128,6 +133,13 @@ class AuthorizationServerConfig(
 
     @Bean
     fun authorizationService(): OAuth2AuthorizationService = InMemoryOAuth2AuthorizationService()
+
+    @Bean
+    fun tokenGenerator(jwkSource: JWKSource<SecurityContext>): OAuth2TokenGenerator<out OAuth2Token> {
+        val jwtGenerator = JwtGenerator(NimbusJwtEncoder(jwkSource))
+        jwtGenerator.setJwtCustomizer(tokenCustomizer())
+        return DelegatingOAuth2TokenGenerator(jwtGenerator, OAuth2AccessTokenGenerator(), OAuth2RefreshTokenGenerator())
+    }
 
     @Bean
     fun jwtDecoder(jwkSource: JWKSource<SecurityContext>): JwtDecoder =
