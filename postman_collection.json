@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "Personal Blog",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "auth_url",             "value": "https://auth-server-production-e7e8.up.railway.app" },
+    { "key": "api_url",              "value": "https://personal-website-production-33a5.up.railway.app" },
+    { "key": "frontend_client_id",   "value": "blog-frontend" },
+    { "key": "frontend_client_secret","value": "Ti7A71SyWPPkZBG+e4LnyHQo321jxK98Q/k09r3MyPU=" },
+    { "key": "agent_client_id",      "value": "blog-agent" },
+    { "key": "agent_client_secret",  "value": "KrkxfG6yI1wcOVrr9itZMNenejneQ/CS1HMI6+fQvMo=" },
+    { "key": "admin_email",          "value": "joaohonorato@gmail.com" },
+    { "key": "admin_password",       "value": "rasauq86" },
+    { "key": "access_token",         "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth Server",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{auth_url}}/health", "host": ["{{auth_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "JWKS",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{auth_url}}/.well-known/jwks.json", "host": ["{{auth_url}}"], "path": [".well-known", "jwks.json"] }
+          }
+        },
+        {
+          "name": "Server Metadata",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{auth_url}}/.well-known/oauth-authorization-server", "host": ["{{auth_url}}"], "path": [".well-known", "oauth-authorization-server"] }
+          }
+        },
+        {
+          "name": "Login (password grant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.access_token) {",
+                  "    pm.collectionVariables.set('access_token', res.access_token);",
+                  "    console.log('Token saved to collection variable access_token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{frontend_client_id}}",    "type": "string" },
+                { "key": "password", "value": "{{frontend_client_secret}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password",            "type": "text" },
+                { "key": "username",   "value": "{{admin_email}}",     "type": "text" },
+                { "key": "password",   "value": "{{admin_password}}",  "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{auth_url}}/oauth2/token", "host": ["{{auth_url}}"], "path": ["oauth2", "token"] }
+          }
+        },
+        {
+          "name": "Agent Token (client credentials)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{agent_client_id}}",     "type": "string" },
+                { "key": "password", "value": "{{agent_client_secret}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "client_credentials", "type": "text" },
+                { "key": "scope",      "value": "agent",              "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{auth_url}}/oauth2/token", "host": ["{{auth_url}}"], "path": ["oauth2", "token"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{api_url}}/actuator/health", "host": ["{{api_url}}"], "path": ["actuator", "health"] }
+          }
+        },
+        {
+          "name": "Posts",
+          "item": [
+            {
+              "name": "List published",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/posts", "host": ["{{api_url}}"], "path": ["api", "posts"] }
+              }
+            },
+            {
+              "name": "List all (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/posts/all", "host": ["{{api_url}}"], "path": ["api", "posts", "all"] }
+              }
+            },
+            {
+              "name": "Get by slug",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/posts/:slug", "host": ["{{api_url}}"], "path": ["api", "posts", ":slug"], "variable": [{ "key": "slug", "value": "my-post" }] }
+              }
+            },
+            {
+              "name": "Create (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"My Post\",\n  \"slug\": \"my-post\",\n  \"excerpt\": \"Short description\",\n  \"content\": \"# Hello\\n\\nContent here.\",\n  \"category\": \"tech\",\n  \"tags\": [\"kotlin\", \"spring\"],\n  \"published\": false\n}"
+                },
+                "url": { "raw": "{{api_url}}/api/posts", "host": ["{{api_url}}"], "path": ["api", "posts"] }
+              }
+            },
+            {
+              "name": "Update (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated Title\",\n  \"slug\": \"my-post\",\n  \"excerpt\": \"Updated excerpt\",\n  \"content\": \"# Updated\\n\\nNew content.\",\n  \"category\": \"tech\",\n  \"tags\": [\"kotlin\"],\n  \"published\": true\n}"
+                },
+                "url": { "raw": "{{api_url}}/api/posts/:id", "host": ["{{api_url}}"], "path": ["api", "posts", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Delete (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "DELETE",
+                "url": { "raw": "{{api_url}}/api/posts/:id", "host": ["{{api_url}}"], "path": ["api", "posts", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Projects",
+          "item": [
+            {
+              "name": "List all",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/projects", "host": ["{{api_url}}"], "path": ["api", "projects"] }
+              }
+            },
+            {
+              "name": "Get by ID (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/projects/:id", "host": ["{{api_url}}"], "path": ["api", "projects", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Create (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"My Project\",\n  \"description\": \"Project description\",\n  \"repoIds\": []\n}"
+                },
+                "url": { "raw": "{{api_url}}/api/projects", "host": ["{{api_url}}"], "path": ["api", "projects"] }
+              }
+            },
+            {
+              "name": "Update (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Project\",\n  \"description\": \"Updated description\",\n  \"repoIds\": []\n}"
+                },
+                "url": { "raw": "{{api_url}}/api/projects/:id", "host": ["{{api_url}}"], "path": ["api", "projects", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Delete (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "DELETE",
+                "url": { "raw": "{{api_url}}/api/projects/:id", "host": ["{{api_url}}"], "path": ["api", "projects", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "List all (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/users", "host": ["{{api_url}}"], "path": ["api", "users"] }
+              }
+            },
+            {
+              "name": "Get by ID (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/users/:id", "host": ["{{api_url}}"], "path": ["api", "users", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GitHub",
+          "item": [
+            {
+              "name": "List repos (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "GET",
+                "url": { "raw": "{{api_url}}/api/github/repos", "host": ["{{api_url}}"], "path": ["api", "github", "repos"] }
+              }
+            },
+            {
+              "name": "Sync repos (auth)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+                "method": "POST",
+                "url": { "raw": "{{api_url}}/api/github/sync", "host": ["{{api_url}}"], "path": ["api", "github", "sync"] }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
