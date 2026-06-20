@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
+import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
@@ -79,9 +80,11 @@ class AuthorizationServerConfig(
 
     @Bean
     fun registeredClientRepository(): RegisteredClientRepository {
+        val clientEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
+
         val frontendClient = RegisteredClient.withId(UUID.randomUUID().toString())
             .clientId("blog-frontend")
-            .clientSecret(passwordEncoder.encode(frontendSecret))
+            .clientSecret(clientEncoder.encode(frontendSecret))
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType("password"))
             .scope("read")
@@ -95,7 +98,7 @@ class AuthorizationServerConfig(
 
         val agentClient = RegisteredClient.withId(UUID.randomUUID().toString())
             .clientId("blog-agent")
-            .clientSecret(passwordEncoder.encode(agentSecret))
+            .clientSecret(clientEncoder.encode(agentSecret))
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
             .scope("agent")
