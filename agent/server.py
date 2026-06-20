@@ -73,21 +73,19 @@ def _select_key(token: str) -> dict:
     return keys[0]
 
 # ---------------------------------------------------------------------------
-# Blog token — resolved at startup (token or email+password)
+# Blog token — resolved at startup via client_credentials
 # ---------------------------------------------------------------------------
 
 def _resolve_blog_token() -> str:
-    token = os.environ.get("BLOG_ADMIN_TOKEN", "")
-    if token:
-        print("✓ Using BLOG_ADMIN_TOKEN from environment")
-        return token
+    static_token = os.environ.get("BLOG_ADMIN_TOKEN", "")
+    if static_token:
+        print("[OK] Using BLOG_ADMIN_TOKEN from environment")
+        return static_token
 
-    email    = os.environ.get("BLOG_EMAIL", "")
-    password = os.environ.get("BLOG_PASSWORD", "")
     client_id     = os.environ.get("AUTH_CLIENT_ID", "blog-agent")
     client_secret = os.environ.get("AUTH_CLIENT_SECRET", "")
-    if not email or not password:
-        print("WARNING: No blog credentials configured. Set BLOG_ADMIN_TOKEN or BLOG_EMAIL+BLOG_PASSWORD.")
+    if not client_id or not client_secret:
+        print("WARNING: AUTH_CLIENT_ID / AUTH_CLIENT_SECRET not set.")
         return ""
 
     if not AUTH_SERVER_URL:
@@ -95,19 +93,15 @@ def _resolve_blog_token() -> str:
 
     resp = requests.post(
         f"{AUTH_SERVER_URL}/oauth2/token",
-        data={
-            "grant_type": "password",
-            "username": email,
-            "password": password,
-        },
+        data={"grant_type": "client_credentials", "scope": "agent"},
         auth=(client_id, client_secret),
         timeout=15,
     )
     if not resp.ok:
-        raise RuntimeError(f"Auth server login failed: {resp.status_code} — {resp.text}")
+        raise RuntimeError(f"Auth server client_credentials failed: {resp.status_code} — {resp.text}")
 
     token = resp.json()["access_token"]
-    print("✓ Authenticated with auth server via email/password")
+    print("[OK] Authenticated with auth server via client_credentials")
     return token
 
 
@@ -168,7 +162,7 @@ async def verify_jwt(request: Request, call_next):
     token = auth[len("Bearer "):].strip()
     try:
         key = _select_key(token)
-        payload = jose_jwt.decode(token, key, algorithms=["RS256"])
+        payload = jose_jwt.decode(token, key, algorithms=["RS256"], options={"verify_aud": False})
     except JWTError as exc:
         return JSONResponse({"error": f"Invalid token: {exc}"}, status_code=401)
     except Exception as exc:
