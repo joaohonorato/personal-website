@@ -1,5 +1,7 @@
+import base64
 import logging
 import threading
+import urllib.parse
 
 import requests
 
@@ -31,10 +33,14 @@ class BlogTokenManager:
             logger.warning("BlogTokenManager: auth credentials not fully configured")
             return
         try:
+            # RFC 6749 §2.3.1: URL-encode id e secret antes do Base64
+            encoded_id = urllib.parse.quote(self._client_id, safe="")
+            encoded_secret = urllib.parse.quote(self._client_secret, safe="")
+            credentials = base64.b64encode(f"{encoded_id}:{encoded_secret}".encode()).decode()
             resp = requests.post(
                 f"{self._url}/oauth2/token",
                 data={"grant_type": "client_credentials", "scope": "agent"},
-                auth=(self._client_id, self._client_secret),
+                headers={"Authorization": f"Basic {credentials}"},
                 timeout=15,
             )
             resp.raise_for_status()
