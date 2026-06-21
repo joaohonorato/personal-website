@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-FastAPI entry point for the blog agent.
+FastAPI entry point — app wiring only. No business logic here.
 
 Endpoints:
   GET  /health               — health check (Railway)
-  POST /run                  — start article generation, returns { jobId }
+  POST /run                  — start article generation
   GET  /stream/{id}          — SSE stream of agent events
   POST /approve/{id}         — send outline feedback
   POST /cancel/{id}          — cancel a running job
@@ -39,20 +39,24 @@ logger = logging.getLogger(__name__)
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from api.routers.article import router as article_router
+from api.routers.linkedin import router as linkedin_router
+from api.routers.review import router as review_router
 from auth import BlogTokenManager, JwksCache
 from config import settings
 from core.dispatch import Dispatcher
 from core.prompts import build_system_prompt, build_tools_list
 from core.tools import make_cover_image_fn
 from jobs import JobRegistry
-from routes.article import router as article_router
-from routes.linkedin import router as linkedin_router
-from routes.review import router as review_router
+from services.article import ArticleService
+from services.linkedin import LinkedInService
+from services.review import ReviewService
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     jwks_cache = JwksCache(settings.auth_server_url)
+
     blog_token_manager = BlogTokenManager(
         settings.auth_server_url,
         settings.auth_client_id,
@@ -71,21 +75,39 @@ async def lifespan(app: FastAPI):
         if settings.cover_image_enabled
         else None
     )
+    anthropic_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     dispatcher = Dispatcher(
         blog_api_url=settings.blog_api_url,
         get_blog_token=lambda: blog_token_manager.token,
         tavily_client=tavily_client,
         cover_image_fn=cover_fn,
     )
+    job_registry = JobRegistry()
 
     app.state.settings = settings
     app.state.jwks_cache = jwks_cache
     app.state.blog_token_manager = blog_token_manager
-    app.state.anthropic_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    app.state.dispatcher = dispatcher
-    app.state.system_prompt = build_system_prompt(settings.cover_image_enabled)
-    app.state.tools = build_tools_list(settings.cover_image_enabled)
-    app.state.job_registry = JobRegistry()
+    app.state.anthropic_client = anthropic_client
+    app.state.job_registry = job_registry
+    app.state.article_service = ArticleService(
+        job_registry=job_registry,
+        anthropic_client=anthropic_client,
+        dispatcher=dispatcher,
+        system_prompt=build_system_prompt(settings.cover_image_enabled),
+        tools=build_tools_list(settings.cover_image_enabled),
+    )
+    app.state.review_service = ReviewService(
+        blog_api_url=settings.blog_api_url,
+        get_blog_token=lambda: blog_token_manager.token,
+        anthropic_client=anthropic_client,
+    )
+    app.state.linkedin_service = LinkedInService(
+        job_registry=job_registry,
+        blog_api_url=settings.blog_api_url,
+        auth_server_url=settings.auth_server_url,
+        get_blog_token=lambda: blog_token_manager.token,
+        anthropic_client=anthropic_client,
+    )
 
     logger.info(
         "[OK] Agent started — blog_api=%s cover_image=%s",

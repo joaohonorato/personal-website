@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import settings
 from core.dispatch import Dispatcher
-from core.prompts import build_system_prompt, build_tools_list
+from core.prompts.article import build_system_prompt, build_tools_list
 from core.runner import run_agent
 from core.tools import make_cover_image_fn
 

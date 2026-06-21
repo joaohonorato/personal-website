@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useCyclingMessage } from "@/hooks/useCyclingMessage";
 import { applyReviewChanges } from "@/app/admin/posts/actions";
 import { useRouter } from "next/navigation";
 
@@ -76,10 +77,22 @@ function ScoreBar({ value }: { value: number }) {
   );
 }
 
+const REVIEW_MESSAGES = [
+  "Lendo o artigo com atenção...",
+  "Verificando qualidade do texto...",
+  "Avaliando coerência e coesão...",
+  "Cruzando referências e fontes...",
+  "Identificando pontos de melhoria...",
+  "Organizando sugestões por impacto...",
+  "Calculando pontuação final...",
+  "Quase pronto...",
+];
+
 export function ReviewPanel({ postId }: { postId: number }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const loadingMessage = useCyclingMessage(REVIEW_MESSAGES, 4000);
   const [result, setResult] = useState<ReviewResult | null>(null);
   const [previousScore, setPreviousScore] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -194,7 +207,10 @@ export function ReviewPanel({ postId }: { postId: number }) {
           {status === "loading" && (
             <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#555", fontSize: "13px" }}>
               <Spinner />
-              Analisando artigo... (30–60 segundos)
+              <span key={loadingMessage} style={{ animation: "msgFadeIn 0.4s ease" }}>
+                {loadingMessage}
+              </span>
+              <style>{`@keyframes msgFadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }`}</style>
             </div>
           )}
 

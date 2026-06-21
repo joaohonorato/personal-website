@@ -1,8 +1,30 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useCyclingMessage } from "@/hooks/useCyclingMessage";
 
 const AGENT_URL = "/api/agent";
+
+const ADAPTING_MESSAGES = [
+  "Lendo o artigo...",
+  "Extraindo os insights principais...",
+  "Adaptando o tom para LinkedIn...",
+  "Formatando para engajamento máximo...",
+  "Revisando o texto final...",
+];
+
+const ITERATING_MESSAGES = [
+  "Processando seu feedback...",
+  "Refinando o texto...",
+  "Aplicando os ajustes...",
+  "Quase pronto...",
+];
+
+const PUBLISHING_MESSAGES = [
+  "Conectando ao LinkedIn...",
+  "Publicando o post...",
+  "Aguardando confirmação...",
+];
 
 type Phase =
   | "idle"
@@ -21,6 +43,10 @@ export function LinkedInPanel({ postId }: { postId: number }) {
   const [linkedinUrl, setLinkedinUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const jobIdRef = useRef<string | null>(null);
+
+  const adaptingMessage = useCyclingMessage(ADAPTING_MESSAGES, 3000);
+  const iteratingMessage = useCyclingMessage(ITERATING_MESSAGES, 2500);
+  const publishingMessage = useCyclingMessage(PUBLISHING_MESSAGES, 2000);
 
   function listenStream(jobId: string) {
     const es = new EventSource(`${AGENT_URL}/linkedin/stream/${jobId}`);
@@ -174,9 +200,16 @@ export function LinkedInPanel({ postId }: { postId: number }) {
         )}
 
         {(phase === "adapting" || phase === "iterating") && (
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "#666" }}>
-            {phase === "adapting" ? "Adaptando artigo para LinkedIn..." : "Revisando com feedback..."}
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#666" }}>
+            <LinkedInSpinner />
+            <span
+              key={phase === "adapting" ? adaptingMessage : iteratingMessage}
+              style={{ fontFamily: "var(--font-mono)", fontSize: "13px", animation: "msgFadeIn 0.4s ease" }}
+            >
+              {phase === "adapting" ? adaptingMessage : iteratingMessage}
+            </span>
+            <style>{`@keyframes msgFadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+          </div>
         )}
 
         {phase === "awaiting_approval" && (
@@ -222,9 +255,15 @@ export function LinkedInPanel({ postId }: { postId: number }) {
         )}
 
         {phase === "publishing" && (
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "#666" }}>
-            Publicando no LinkedIn...
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#666" }}>
+            <LinkedInSpinner />
+            <span
+              key={publishingMessage}
+              style={{ fontFamily: "var(--font-mono)", fontSize: "13px", animation: "msgFadeIn 0.4s ease" }}
+            >
+              {publishingMessage}
+            </span>
+          </div>
         )}
 
         {phase === "published" && (
@@ -251,5 +290,13 @@ export function LinkedInPanel({ postId }: { postId: number }) {
         )}
       </div>
     </div>
+  );
+}
+
+function LinkedInSpinner() {
+  return (
+    <span style={{ display: "inline-block", width: "12px", height: "12px", border: "2px solid #ccc", borderTopColor: "#0077b5", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </span>
   );
 }
