@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useCyclingMessage } from "@/hooks/useCyclingMessage";
+import { redirectIfUnauthorized } from "@/lib/auth-redirect";
 
 const AGENT_URL = "/api/agent";
 
@@ -87,6 +88,7 @@ export function LinkedInPanel({ postId }: { postId: number }) {
     setLinkedinUrl(null);
 
     const res = await fetch(`${AGENT_URL}/linkedin/adapt/${postId}`, { method: "POST" });
+    if (redirectIfUnauthorized(res.status)) return;
     if (!res.ok) {
       setError("Failed to start LinkedIn adaptation");
       setPhase("error");
@@ -107,6 +109,7 @@ export function LinkedInPanel({ postId }: { postId: number }) {
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ feedback }),
     });
+    if (redirectIfUnauthorized(res.status)) return;
     if (!res.ok) {
       setError("Iteration failed");
       setPhase("error");
@@ -126,6 +129,7 @@ export function LinkedInPanel({ postId }: { postId: number }) {
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ text: editedText }),
     });
+    if (redirectIfUnauthorized(res.status)) return;
     if (!res.ok) {
       setError("Approval failed");
       setPhase("error");

@@ -40,6 +40,11 @@ export default async function LoginPage({
             />
           </div>
 
+          {error === "session_expired" && (
+            <p style={{ fontSize: "12px", color: "#7c5c00", background: "#fff8e1", border: "1px solid #f0c040", padding: "8px 10px", margin: 0 }}>
+              Sua sessão expirou. Faça login novamente.
+            </p>
+          )}
           {error === "invalid_credentials" && (
             <p style={{ fontSize: "12px", color: "#c00", margin: 0 }}>
               Email ou senha incorretos.

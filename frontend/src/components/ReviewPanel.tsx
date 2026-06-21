@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useCyclingMessage } from "@/hooks/useCyclingMessage";
+import { redirectIfUnauthorized } from "@/lib/auth-redirect";
 import { applyReviewChanges } from "@/app/admin/posts/actions";
 import { useRouter } from "next/navigation";
 
@@ -107,6 +108,7 @@ export function ReviewPanel({ postId }: { postId: number }) {
     setApproved(new Set());
     try {
       const res = await fetch(`/api/agent/review/${postId}`, { method: "POST" });
+      if (redirectIfUnauthorized(res.status)) return;
       if (!res.ok) throw new Error(`Erro ${res.status}`);
       const data: ReviewResult = await res.json();
       setResult(data);

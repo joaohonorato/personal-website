@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { API_URL } from "@/lib/config";
 
 export async function apiFetch<T>(
@@ -22,6 +23,10 @@ export async function apiFetch<T>(
     headers,
     cache: options.cache ?? "no-store",
   });
+
+  if (res.status === 401) {
+    redirect("/admin/login?error=session_expired");
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
