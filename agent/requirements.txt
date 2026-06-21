@@ -3,11 +3,12 @@ tavily-python>=0.5.0
 requests>=2.32.0
 python-dotenv>=1.0.0
 python-jose[cryptography]>=3.3.0
+pydantic-settings>=2.0.0
 
 # FastAPI server (agent/server.py)
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 
-# Imagem de capa (opcional — só necessário se OPENAI_API_KEY estiver configurada)
+# Cover image (optional — only needed if OPENAI_API_KEY is set)
 openai>=1.50.0
 cloudinary>=1.41.0
