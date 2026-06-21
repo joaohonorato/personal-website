@@ -84,7 +84,7 @@ export function AgentPanel() {
       body: JSON.stringify({ topic, language, category, audience, keyPoints }),
     });
 
-    if (redirectIfUnauthorized(res.status)) return;
+    if (await redirectIfUnauthorized(res.status)) return;
     if (!res.ok) {
       setStatus("error");
       setLogs(["❌ Erro ao iniciar o agente. O servidor está rodando?"]);

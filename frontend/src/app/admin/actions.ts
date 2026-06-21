@@ -32,7 +32,7 @@ export async function signIn(formData: FormData) {
     redirect("/admin/login?error=invalid_credentials");
   }
 
-  const data = await res.json() as { access_token: string; roles?: string[] };
+  const data = await res.json() as { access_token: string; refresh_token?: string; roles?: string[] };
   const token = data.access_token;
 
   // Decode roles from JWT payload (no verification needed here — server already validated)
@@ -49,6 +49,9 @@ export async function signIn(formData: FormData) {
   };
   cookieStore.set("auth_token",  token,            { ...cookieOpts, httpOnly: true  });
   cookieStore.set("user_roles",  roles.join(","),  { ...cookieOpts, httpOnly: false });
+  if (data.refresh_token) {
+    cookieStore.set("refresh_token", data.refresh_token, { ...cookieOpts, httpOnly: true });
+  }
 
   redirect("/admin");
 }
@@ -56,6 +59,7 @@ export async function signIn(formData: FormData) {
 export async function signOut() {
   const cookieStore = await cookies();
   cookieStore.delete("auth_token");
+  cookieStore.delete("refresh_token");
   cookieStore.delete("user_roles");
   redirect("/admin/login");
 }

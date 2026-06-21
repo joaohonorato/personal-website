@@ -24,6 +24,12 @@ export function proxy(request: NextRequest) {
   }
 
   if (isTokenExpired(token)) {
+    const refreshToken = request.cookies.get("refresh_token")?.value;
+    if (refreshToken) {
+      const refreshUrl = new URL("/api/auth/refresh", request.url);
+      refreshUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(refreshUrl);
+    }
     const loginUrl = new URL("/admin/login?error=session_expired", request.url);
     const res = NextResponse.redirect(loginUrl);
     res.cookies.delete("auth_token");

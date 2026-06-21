@@ -11,8 +11,8 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes
+import org.springframework.security.oauth2.core.OAuth2RefreshToken
 import org.springframework.security.oauth2.core.OAuth2Token
-import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
@@ -60,17 +60,16 @@ class PasswordGrantAuthenticationProvider(
         // 3. Build principal for token context
         val userPrincipal = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
 
-        // 4. Generate access token
-        val tokenContext = DefaultOAuth2TokenContext.builder()
+        val baseContext = DefaultOAuth2TokenContext.builder()
             .registeredClient(registeredClient)
             .principal(userPrincipal)
             .authorizationServerContext(AuthorizationServerContextHolder.getContext())
             .authorizationGrantType(AuthorizationGrantType("password"))
             .authorizationGrant(grantAuth)
-            .tokenType(OAuth2TokenType.ACCESS_TOKEN)
-            .build()
 
-        val generatedToken = tokenGenerator.generate(tokenContext)
+        // 4. Generate access token
+        val accessTokenContext = baseContext.tokenType(OAuth2TokenType.ACCESS_TOKEN).build()
+        val generatedToken = tokenGenerator.generate(accessTokenContext)
             ?: throw OAuth2AuthenticationException(
                 OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR, "Token generation failed", null)
             )
@@ -83,7 +82,15 @@ class PasswordGrantAuthenticationProvider(
             registeredClient.scopes,
         )
 
-        // 5. Persist authorization record
+        // 5. Generate refresh token (if client supports it)
+        val refreshToken: OAuth2RefreshToken? =
+            if (registeredClient.authorizationGrantTypes.contains(AuthorizationGrantType.REFRESH_TOKEN)) {
+                val refreshContext = baseContext.tokenType(OAuth2TokenType.REFRESH_TOKEN).build()
+                val generated = tokenGenerator.generate(refreshContext)
+                generated?.let { OAuth2RefreshToken(it.tokenValue, it.issuedAt, it.expiresAt) }
+            } else null
+
+        // 6. Persist authorization record
         val authBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
             .principalName(userDetails.username)
             .authorizationGrantType(AuthorizationGrantType("password"))
@@ -97,9 +104,19 @@ class PasswordGrantAuthenticationProvider(
         } else {
             authBuilder.token(accessToken)
         }
+
+        if (refreshToken != null) {
+            authBuilder.refreshToken(refreshToken)
+        }
+
         authorizationService.save(authBuilder.build())
 
-        return OAuth2AccessTokenAuthenticationToken(registeredClient, clientPrincipal, accessToken)
+        return OAuth2AccessTokenAuthenticationToken(
+            registeredClient,
+            clientPrincipal,
+            accessToken,
+            refreshToken,
+        )
     }
 
     override fun supports(authentication: Class<*>): Boolean =

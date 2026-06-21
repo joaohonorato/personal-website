@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.AuthorizationGrantType
@@ -15,7 +16,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.OAuth2Token
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
-import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository
@@ -36,7 +37,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.oauth2.server.authorization.authentication.ClientSecretAuthenticationProvider
 import org.springframework.security.web.SecurityFilterChain
 import java.time.Duration
-import java.util.UUID
+import javax.sql.DataSource
 
 @Configuration
 class AuthorizationServerConfig(
@@ -89,21 +90,24 @@ class AuthorizationServerConfig(
 
     @Bean
     fun registeredClientRepository(): RegisteredClientRepository {
-        val frontendClient = RegisteredClient.withId(UUID.randomUUID().toString())
+        val frontendClient = RegisteredClient.withId("blog-frontend-client")
             .clientId("blog-frontend")
             .clientSecret(passwordEncoder.encode(frontendSecret))
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType("password"))
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .scope("read")
             .scope("write")
             .tokenSettings(
                 TokenSettings.builder()
                     .accessTokenTimeToLive(Duration.ofDays(expirationDays))
+                    .refreshTokenTimeToLive(Duration.ofDays(90))
+                    .reuseRefreshTokens(false)
                     .build()
             )
             .build()
 
-        val agentClient = RegisteredClient.withId(UUID.randomUUID().toString())
+        val agentClient = RegisteredClient.withId("blog-agent-client")
             .clientId("blog-agent")
             .clientSecret(passwordEncoder.encode(agentSecret))
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
@@ -142,7 +146,11 @@ class AuthorizationServerConfig(
     // ── Infrastructure beans ──────────────────────────────────────────────────
 
     @Bean
-    fun authorizationService(): OAuth2AuthorizationService = InMemoryOAuth2AuthorizationService()
+    fun authorizationService(
+        dataSource: DataSource,
+        clientRepository: RegisteredClientRepository,
+    ): OAuth2AuthorizationService =
+        JdbcOAuth2AuthorizationService(JdbcTemplate(dataSource), clientRepository)
 
     @Bean
     fun tokenGenerator(jwkSource: JWKSource<SecurityContext>): OAuth2TokenGenerator<out OAuth2Token> {

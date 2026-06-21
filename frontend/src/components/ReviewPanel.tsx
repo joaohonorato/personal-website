@@ -108,7 +108,7 @@ export function ReviewPanel({ postId }: { postId: number }) {
     setApproved(new Set());
     try {
       const res = await fetch(`/api/agent/review/${postId}`, { method: "POST" });
-      if (redirectIfUnauthorized(res.status)) return;
+      if (await redirectIfUnauthorized(res.status)) return;
       if (!res.ok) throw new Error(`Erro ${res.status}`);
       const data: ReviewResult = await res.json();
       setResult(data);
